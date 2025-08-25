@@ -20,6 +20,8 @@ from typing import List, Tuple, Dict, Set, Union
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 
+MOVIE_TITLE_COL: str = "tconst"
+ACTOR_NAME_COL: str = "name"
 WEIGHT: str = "weight"
 DEFAULT_SEED: int = 42
 MIN_MARKER: int = 8
@@ -90,7 +92,8 @@ def load_data() -> pd.DataFrame:
     Loads with caching for faster cold starts.
     :return: The actor & filmmakers collaboration DataFrame.
     """
-    return pd.read_csv(DATA_PATH, dtype=str)
+    # Load only necessary columns as strings
+    return pd.read_csv(DATA_PATH, dtype=str, usecols=[MOVIE_TITLE_COL, ACTOR_NAME_COL])
 
 def build_graph(pairs: pd.DataFrame, min_edge_weight: int = 1) -> nx.Graph:
     """
@@ -102,7 +105,7 @@ def build_graph(pairs: pd.DataFrame, min_edge_weight: int = 1) -> nx.Graph:
     :return: A graph where nodes are actors/filmmakers and edges represent co-appearances.
     """
     # Group actors by title
-    actors_by_title = pairs.groupby("tconst")["name"].apply(list).to_dict()
+    actors_by_title = pairs.groupby(MOVIE_TITLE_COL)[ACTOR_NAME_COL].apply(list).to_dict()
     edge_weights = Counter()
     for cast in actors_by_title.values():
         # unique actors within a title to avoid double counting
@@ -543,7 +546,6 @@ st.caption(SITE_CAPTION)
 
 # Load the dataset
 df = load_data()
-df = df.drop(columns='title')
 
 # ------------
 # DATA & GRAPH
