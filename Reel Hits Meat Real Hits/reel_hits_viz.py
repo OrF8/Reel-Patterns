@@ -64,7 +64,7 @@ def create_pearson_heatmap() -> None:
 
     # Plot heatmap
     plt.figure(figsize=FIG_SIZE)
-    ax = sns.heatmap(data=corr, annot=True, cmap="viridis", fmt=".2f", square=True,
+    ax = sns.heatmap(data=corr, vmin=-1, vmax=1, annot=True, cmap="viridis", fmt=".2f", square=True,
                 cbar_kws={"shrink": .8}, annot_kws={"size": 20})
     plt.title("Pearson Correlation Heatmap For Movie's\nSuccess And Their Soundtrack Popularity\n",
               fontsize=22, fontweight="bold")
@@ -91,7 +91,7 @@ def create_spearman_heatmap() -> None:
 
     # Plot heatmap
     plt.figure(figsize=FIG_SIZE)
-    ax = sns.heatmap(data=corr, annot=True, cmap="viridis", fmt=".2f", square=True,
+    ax = sns.heatmap(data=corr, vmin=-1, vmax=1, annot=True, cmap="viridis", fmt=".2f", square=True,
                      cbar_kws={"shrink": .8}, annot_kws={"size": 20})
     plt.title("Spearman Correlation Heatmap For Movie's\nSuccess And Their Soundtrack Popularity\n",
               fontsize=22, fontweight="bold")
@@ -142,17 +142,89 @@ def create_vote_count_hist():
     plt.show()
 
 
-def create_scatterplot():
+def create_scatterplot_pop_vote():
     plt.figure(figsize=(10, 6))
     sns.scatterplot(x='album_popularity', y='vote_average', data=df)
-    plt.title("Album Popularity vs Movie Revenue", fontsize=16)
+    sns.regplot(x='album_popularity', y='vote_average', data=df, scatter=False, color='red', line_kws={"linewidth": 2})
+    plt.title("Album Popularity vs Vote Average", fontsize=16)
     plt.xlabel("Album Popularity", fontsize=14)
-    plt.ylabel("vote_average", fontsize=14)
+    plt.ylabel("Vote Average", fontsize=14)
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+
+def create_scatterplot_pop_revenue():
+    plt.figure(figsize=(10, 6))
+    sns.scatterplot(x='album_popularity', y='revenue', data=df)
+    sns.regplot(x='album_popularity', y='revenue', data=df, scatter=False, color='red', line_kws={"linewidth": 2})
+    plt.title("Album Popularity vs Revenue", fontsize=16)
+    plt.xlabel("Album Popularity", fontsize=14)
+    plt.ylabel("Revenue", fontsize=14)
     plt.grid(True)
     plt.tight_layout()
     plt.show()
 
 
 if __name__ == "__main__":
-    create_pearson_heatmap()
-    create_spearman_heatmap()
+    create_scatterplot_pop_revenue()
+
+
+# from scipy.stats import pearsonr, spearmanr
+#
+# def calc_corr_with_pvalues(data, method):
+#     """
+#     Calculate correlation matrix with p-values.
+#     :param data: The DataFrame containing the data.
+#     :param method: The correlation method ('pearson' or 'spearman').
+#     :return: A tuple of DataFrames (correlation matrix, p-value matrix).
+#     """
+#     cols = data.columns
+#     corr_matrix = pd.DataFrame(index=cols, columns=cols, dtype=float)
+#     pval_matrix = pd.DataFrame(index=cols, columns=cols, dtype=float)
+#
+#     for i in cols:
+#         for j in cols:
+#             if method == 'pearson':
+#                 corr, pval = pearsonr(data[i], data[j])
+#             elif method == 'spearman':
+#                 corr, pval = spearmanr(data[i], data[j])
+#             corr_matrix.loc[i, j] = corr
+#             pval_matrix.loc[i, j] = pval
+#
+#     return corr_matrix, pval_matrix
+#
+#
+# def create_heatmap_with_pvalues(method):
+#     """
+#     Create a heatmap with correlation coefficients and p-values.
+#     :param method: The correlation method ('pearson' or 'spearman').
+#     """
+#     if method == 'spearman':
+#         ranked_data = data.apply(rankdata)
+#         corr, pvals = calc_corr_with_pvalues(ranked_data, method)
+#     else:
+#         corr, pvals = calc_corr_with_pvalues(data, method)
+#
+#     # Combine correlation and p-values for annotations
+#     annotations = corr.round(2).astype(str) + "\n(p=" + pvals.round(3).astype(str) + ")"
+#
+#     # Plot heatmap
+#     plt.figure(figsize=FIG_SIZE)
+#     ax = sns.heatmap(data=corr, vmin=-1, vmax=1, annot=annotations, fmt="", cmap="viridis", square=True,
+#                      cbar_kws={"shrink": .8}, annot_kws={"size": 10})
+#     plt.title(f"{method.capitalize()} Correlation Heatmap with P-Values\n", fontsize=22, fontweight="bold")
+#     plt.xticks(rotation=0, fontsize=16)
+#     plt.yticks(rotation=0, fontsize=16)
+#
+#     cbar = ax.collections[0].colorbar
+#     cbar.ax.tick_params(labelsize=16)
+#     cbar.set_label(f"{method.capitalize()} Correlation", fontsize=18)
+#
+#     plt.tight_layout()
+#     plt.show()
+#
+#
+# # Example usage
+# create_heatmap_with_pvalues('pearson')
+# create_heatmap_with_pvalues('spearman')
