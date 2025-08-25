@@ -4,7 +4,7 @@
 #   pip install -r requirements.txt
 #
 # Run
-#   python -m streamlit run streamlit_app.py
+#   python -m streamlit run "What Can I Say, We Cliqued\streamlit_app.py"
 
 import itertools
 import networkx as nx
@@ -64,7 +64,7 @@ PARTICIPATION_METRIC: str ="Participation"
 WARD_LINKAGE: str = "ward"
 SITE_TITLE: str  = "🎬 Reel Patterns: Co‑appearance Communities"
 SITE_CAPTION: str = "Explore which actors and filmmakers tend to appear together, tune thresholds, and compare community algorithms."
-DATA_PATH: str = "..\\data\\collabs.csv"
+DATA_PATH: str = "data\\collabs.csv"
 DENDROGRAM_TITLE_FMT: str = f"Dendrogram Hierarchy (linkage = {{linkage_method}})"
 BROWSE_COMM_OPTIONS_MULT_FMT: str = f"#{{i}} – {{size}} actors & filmmakers"
 BROWSE_COMM_OPTIONS_SINGLE_FMT: str = f"#{{i}} – 1 actor or filmmaker"
