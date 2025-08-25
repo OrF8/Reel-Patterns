@@ -21,6 +21,8 @@ def create_best_collabs() -> None:
     titles_basics = titles_basics[titles_basics['startYear'].str.isnumeric()]
     titles_basics = titles_basics[titles_basics['startYear'].astype(int) >= 1990]
     titles_basics = titles_basics[titles_basics['primaryTitle'].notna()]
+
+    # Save primaryTitle for convenience
     titles_basics = titles_basics[['tconst', 'primaryTitle']]
 
     print("Successfully loaded titles_basics with shape:", titles_basics.shape)

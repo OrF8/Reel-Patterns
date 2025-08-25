@@ -97,12 +97,12 @@ def build_graph(pairs: pd.DataFrame, min_edge_weight: int = 1) -> nx.Graph:
     Build a co-appearance graph from (name, title) pairs.
     Each node is an actor/filmmaker; an edge (u, v) exists if u and v appeared together in at least
     `min_edge_weight` titles. Edge weight = number of shared titles.
-    :param pairs: DataFrame with columns "name" and "title".
+    :param pairs: DataFrame with columns "name" and "tconst".
     :param min_edge_weight: Minimum number of shared titles to create an edge between two actors/filmmakers.
     :return: A graph where nodes are actors/filmmakers and edges represent co-appearances.
     """
     # Group actors by title
-    actors_by_title = pairs.groupby("title")["name"].apply(list).to_dict()
+    actors_by_title = pairs.groupby("tconst")["name"].apply(list).to_dict()
     edge_weights = Counter()
     for cast in actors_by_title.values():
         # unique actors within a title to avoid double counting
@@ -543,6 +543,7 @@ st.caption(SITE_CAPTION)
 
 # Load the dataset
 df = load_data()
+df = df.drop(columns='title')
 
 # ------------
 # DATA & GRAPH
