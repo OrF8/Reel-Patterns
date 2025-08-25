@@ -427,7 +427,7 @@ def attach_wikidata_franchise_ids(df: pd.DataFrame,
 # ---------------------------
 if __name__ == "__main__":
 
-    rt_movies_df = pd.read_csv("/homes/adirt/repos/py/packages/NeedleInADataHaystack/data/rotten_tomatoes_movies.csv")
+    rt_movies_df = pd.read_csv("./data/rotten_tomatoes_movies.csv")
     # Do the enrichment (keep both series & franchise IDs)
     enriched = attach_wikidata_franchise_ids(rt_movies_df[["rotten_tomatoes_link"]], "rotten_tomatoes_link", id_mode="both")
     # If you want a single franchise_id, pick 'series' or 'ip':
