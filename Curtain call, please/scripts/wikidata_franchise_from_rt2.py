@@ -1,8 +1,9 @@
 # wikidata_franchise_from_rt.py
 # ------------------------------------------------------------
 # Map Rotten Tomatoes IDs (P1258) -> Wikidata film item -> series (P179) & franchise (P8345)
-# + Add money fields: budget (P2130, fallback P2769), box office (P2142) with currency/qualifiers
-# + Add derived money metrics & labels
+# + Money fields: budget (P2130, fallback P2769), box office (P2142) with currency/qualifiers
+# + External IDs: Box Office Mojo film ID (P1237), IMDb ID (P345), TMDb movie ID (P4947)
+# (Derived columns removed; only raw Wikidata fields kept.)
 # Usage (at bottom): df_enriched = attach_wikidata_franchise_ids(df, "rotten_tomatoes_link", id_mode="both")
 #
 # Requires: pandas, requests
@@ -20,13 +21,6 @@ WD_ENDPOINT = "https://query.wikidata.org/sparql"
 
 # IMPORTANT: replace with your app/contact so WDQS is happy.
 DEFAULT_USER_AGENT = "FranchiseMapper/1.0 (adirtuval@gmail.com)"
-
-# ---- Derived-money-calculation defaults (documented in-field) ----
-# Effective studio revenue share on worldwide gross when domestic/international split is unknown.
-# Literature/anecdotal rules of thumb: ~50% domestic, ~40% international, ~25% China; here we use a single effective number.
-DEFAULT_SHARE_EFFECTIVE = 0.45
-# Prints & Advertising (marketing) heuristic when not publicly reported.
-DEFAULT_P_AND_A_FACTOR = 0.50  # 50% of production budget
 
 
 def _escape_literal(s: str) -> str:
@@ -48,9 +42,7 @@ def _build_values_pairs(pairs: List[Tuple[str, str]]) -> str:
 def _sparql_for_pairs(pairs: List[Tuple[str, str]]) -> str:
     """
     SPARQL: match films by Rotten Tomatoes ID (P1258), return film, series (P179), franchise (P8345),
-    and money fields:
-      - Budget (preferred rank P2130; fallback to any P2130; fallback to P2769)
-      - Box office (preferred rank P2142; fallback to any P2142)
+    money fields (budget P2130/P2769, box office P2142), and external IDs (BOM/IMDb/TMDb).
     For quantities, return amount & unit IRI, and qualifiers when present (P585 as-of, P1001 region).
     ?orig carries the original RT id to map results back to your rows.
     """
@@ -65,12 +57,19 @@ SELECT ?orig ?film ?filmLabel ?series ?seriesLabel ?franchise ?franchiseLabel
        ?box_amount_pref ?box_unit_pref ?box_asof_pref ?box_region_pref ?box_region_prefLabel
        ?box_amount_any  ?box_unit_any  ?box_asof_any  ?box_region_any  ?box_region_anyLabel
 
+       ?bom_id ?imdb_id ?tmdb_id
+
 WHERE {{
   VALUES (?rtid ?orig) {{ {values_block} }}
   ?film wdt:P1258 ?rtid .
 
   OPTIONAL {{ ?film wdt:P179  ?series. }}
   OPTIONAL {{ ?film wdt:P8345 ?franchise. }}
+
+  # -------- External IDs --------
+  OPTIONAL {{ ?film wdt:P1237 ?bom_id. }}   # Box Office Mojo film ID
+  OPTIONAL {{ ?film wdt:P345  ?imdb_id. }}  # IMDb ID
+  OPTIONAL {{ ?film wdt:P4947 ?tmdb_id. }}  # TMDb movie ID
 
   # -------- Budget (P2130 preferred rank) --------
   OPTIONAL {{
@@ -206,16 +205,21 @@ def _parse_bindings_to_df(js: dict) -> pd.DataFrame:
             "franchise_qid": last_qid(get("franchise")),
             "franchise_label": get("franchiseLabel"),
 
+            # ---- External IDs ----
+            "bom_film_id": get("bom_id"),
+            "imdb_id": get("imdb_id"),
+            "tmdb_id": get("tmdb_id"),
+
             # ---- Money fields (raw) ----
             "budget_value": float(budget_amount) if budget_amount is not None else None,
             "budget_currency_qid": last_qid(budget_unit_iri),
-            "budget_currency": None,  # filled by label service implicitly via unit label; not returned directly here
+            "budget_currency": None,  # unit label not returned directly here
             "budget_asof": budget_asof,
             "budget_source": budget_source,  # "P2130" or "P2769"
 
             "box_office_value": float(box_amount) if box_amount is not None else None,
             "box_office_currency_qid": last_qid(box_unit_iri),
-            "box_office_currency": None,  # filled by label service implicitly via unit label; not returned directly here
+            "box_office_currency": None,  # unit label not returned directly here
             "box_office_asof": box_asof,
             "box_office_region_qid": last_qid(box_region_iri),
             "box_office_region": box_region_label,
@@ -225,6 +229,7 @@ def _parse_bindings_to_df(js: dict) -> pd.DataFrame:
             "rt_id", "wd_film_qid", "wd_film_label",
             "series_qid", "series_label",
             "franchise_qid", "franchise_label",
+            "bom_film_id", "imdb_id", "tmdb_id",
             "budget_value", "budget_currency_qid", "budget_currency", "budget_asof", "budget_source",
             "box_office_value", "box_office_currency_qid", "box_office_currency", "box_office_asof",
             "box_office_region_qid", "box_office_region"
@@ -330,15 +335,12 @@ def attach_wikidata_franchise_ids(df: pd.DataFrame,
       - wd_film_qid, wd_film_label
       - series_qid, series_label  (P179: "part of the series")
       - franchise_qid, franchise_label (P8345: "media franchise")
+      - External IDs:
+          * bom_film_id (P1237), imdb_id (P345), tmdb_id (P4947)
       - Money fields (raw):
           * budget_value, budget_currency_qid, budget_currency, budget_asof, budget_source
           * box_office_value, box_office_currency_qid, box_office_currency, box_office_asof,
             box_office_region_qid, box_office_region
-      - Money fields (derived; heuristic constants documented in columns):
-          * p_and_a_est, p_and_a_method, share_effective
-          * studio_rentals_est, profit_est, roi_est
-          * gross_to_budget_multiple, breakeven_world_est, breakeven_gap
-          * money_success_label  (smash_hit / hit / marginal / underperformer / bomb)
       - Optional: franchise_id column (choose 'series' or 'ip' via id_mode)
     id_mode: 'series' | 'ip' | 'both'
     """
@@ -352,64 +354,6 @@ def attach_wikidata_franchise_ids(df: pd.DataFrame,
     out = df.copy()
     out = out.merge(lookups, how="left", left_on=rt_col, right_on="rt_id")
     out.drop(columns=["rt_id"], inplace=True)
-
-    # ----- Fill human-readable currency labels when possible -----
-    # We didn't fetch unit labels directly as separate columns (SERVICE label fills them server-side),
-    # so here we leave *_currency as None unless you want to post-process via another lookup.
-    # You can map currency_qid -> code externally if needed.
-
-    # ----- Derived money metrics -----
-    # Safe numeric conversions
-    def _to_float(x):
-        try:
-            return float(x)
-        except (TypeError, ValueError):
-            return None
-
-    out["budget_value"] = out["budget_value"].apply(_to_float)
-    out["box_office_value"] = out["box_office_value"].apply(_to_float)
-
-    # Heuristic parameters (copy into columns for auditability)
-    out["p_and_a_method"] = f"{int(DEFAULT_P_AND_A_FACTOR*100)}% of production budget (heuristic)"
-    out["share_effective"] = DEFAULT_SHARE_EFFECTIVE
-
-    # P&A estimate
-    out["p_and_a_est"] = out["budget_value"] * DEFAULT_P_AND_A_FACTOR
-
-    # Studio rentals estimate (effective share on worldwide gross)
-    out["studio_rentals_est"] = out["box_office_value"] * DEFAULT_SHARE_EFFECTIVE
-
-    # Profit estimate
-    out["profit_est"] = out["studio_rentals_est"] - (
-        out["budget_value"] + out["p_and_a_est"]
-    )
-
-    # ROI estimate on cash out (budget + P&A)
-    denom = out["budget_value"] + out["p_and_a_est"]
-    out["roi_est"] = out["profit_est"] / denom
-
-    # Gross-to-budget multiple (naive)
-    out["gross_to_budget_multiple"] = out["box_office_value"] / out["budget_value"]
-
-    # Breakeven worldwide gross estimate and gap
-    out["breakeven_world_est"] = (out["budget_value"] + out["p_and_a_est"]) / DEFAULT_SHARE_EFFECTIVE
-    out["breakeven_gap"] = out["box_office_value"] - out["breakeven_world_est"]
-
-    # Money success label (conservative, share-aware rubric)
-    def _label(roi):
-        if roi is None or (isinstance(roi, float) and (math.isnan(roi) or math.isinf(roi))):
-            return None
-        if roi >= 1.0:
-            return "smash_hit"
-        if roi >= 0.3:
-            return "hit"
-        if roi >= -0.2:
-            return "marginal"
-        if roi >= -0.5:
-            return "underperformer"
-        return "bomb"
-
-    out["money_success_label"] = out["roi_est"].apply(_label)
 
     if id_mode in ("series", "ip"):
         out["franchise_id"] = out["series_qid"] if id_mode == "series" else out["franchise_qid"]
@@ -426,15 +370,17 @@ def attach_wikidata_franchise_ids(df: pd.DataFrame,
 # Example usage
 # ---------------------------
 if __name__ == "__main__":
+    t0 = time.time()
 
     rt_movies_df = pd.read_csv("./data/rotten_tomatoes_movies.csv")
     # Do the enrichment (keep both series & franchise IDs)
-    enriched = attach_wikidata_franchise_ids(rt_movies_df[["rotten_tomatoes_link"]], "rotten_tomatoes_link", id_mode="both")
-    # If you want a single franchise_id, pick 'series' or 'ip':
-    # enriched = attach_wikidata_franchise_ids(df, "rotten_tomatoes_link", id_mode="series")
+    enriched = attach_wikidata_franchise_ids(
+        rt_movies_df[["rotten_tomatoes_link"]],
+        "rotten_tomatoes_link",
+        id_mode="both"
+    )
 
-    enriched.to_csv("./result.csv")
+    enriched.to_csv("./result.csv", index=False)
 
-    # Show results
-    # pd.set_option("display.max_columns", None)
-    # print(enriched)
+    elapsed = time.time() - t0
+    print(f"Done. Wrote ./result.csv in {elapsed:.2f} seconds.")
