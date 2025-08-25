@@ -5,7 +5,7 @@ def create_best_collabs() -> None:
     Create a CSV file with the best collaborations between actors and directors from the IMDB dataset.
     """
     # Load all the actors and directors from the names.basics file
-    names_basics = pd.read_csv("data\\name.basics.tsv", sep="\t",
+    names_basics = pd.read_csv("../data/name.basics.tsv", sep="\t",
                                usecols=['nconst', 'primaryName', 'primaryProfession'])
     names_basics = names_basics[names_basics['primaryProfession'].str.contains('actor|actress|director', na=False)]
     names_basics = names_basics[['nconst', 'primaryName']]
@@ -13,7 +13,7 @@ def create_best_collabs() -> None:
     print("Successfully loaded names_basics with shape:", names_basics.shape)
 
     # Load all the titles
-    titles_basics = pd.read_csv("data\\title.basics.tsv", sep="\t",
+    titles_basics = pd.read_csv("../data/title.basics.tsv", sep="\t",
                                 usecols=['tconst', 'primaryTitle', 'startYear', 'titleType'], dtype=str)
     # Filter for movies only
     titles_basics = titles_basics[titles_basics['titleType'] == 'movie']
@@ -26,7 +26,7 @@ def create_best_collabs() -> None:
     print("Successfully loaded titles_basics with shape:", titles_basics.shape)
 
     # Load the alternative titles
-    alternatives = pd.read_csv("data\\title.akas.tsv", sep="\t",
+    alternatives = pd.read_csv("../data/title.akas.tsv", sep="\t",
                                usecols=['titleId', 'region'], dtype=str)
     # Filter only US movies
     alternatives = alternatives[alternatives['region'] == 'US']
@@ -36,7 +36,7 @@ def create_best_collabs() -> None:
 
 
     # Load the title.principals file to get the relationships between titles and names
-    titles_principals = pd.read_csv("data\\title.principals.tsv", sep="\t",
+    titles_principals = pd.read_csv("../data/title.principals.tsv", sep="\t",
                                     usecols=['tconst', 'nconst', 'category'], dtype=str)
     # Filter for actors, actresses, and directors again, for consistency
     titles_principals = titles_principals[titles_principals['category'].isin(['actor', 'actress', 'director'])]
@@ -45,7 +45,7 @@ def create_best_collabs() -> None:
     print("Successfully loaded titles_principals with shape:", titles_principals.shape)
 
     # Load the ratings file to get the ratings for each title
-    ratings = pd.read_csv("data\\title.ratings.tsv", sep="\t", dtype=str)
+    ratings = pd.read_csv("../data/title.ratings.tsv", sep="\t", dtype=str)
     # Filter out titles with a small amount of ratings
     ratings = ratings[ratings['numVotes'].str.isnumeric()]
     ratings = ratings[ratings['numVotes'].astype(int) > 1000]

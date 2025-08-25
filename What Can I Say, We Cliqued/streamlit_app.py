@@ -1,7 +1,7 @@
 # Reel Patterns: What can I say, We cliqued
 #
 # Requirements
-#   pip install streamlit pandas networkx
+#   pip install -r requirements.txt
 #
 # Run
 #   python -m streamlit run streamlit_app.py
@@ -64,7 +64,7 @@ PARTICIPATION_METRIC: str ="Participation"
 WARD_LINKAGE: str = "ward"
 SITE_TITLE: str  = "🎬 Reel Patterns: Co‑appearance Communities"
 SITE_CAPTION: str = "Explore which actors and filmmakers tend to appear together, tune thresholds, and compare community algorithms."
-DATA_PATH: str = "data\\collabs.csv"
+DATA_PATH: str = "..\\data\\collabs.csv"
 DENDROGRAM_TITLE_FMT: str = f"Dendrogram Hierarchy (linkage = {{linkage_method}})"
 BROWSE_COMM_OPTIONS_MULT_FMT: str = f"#{{i}} – {{size}} actors & filmmakers"
 BROWSE_COMM_OPTIONS_SINGLE_FMT: str = f"#{{i}} – 1 actor or filmmaker"
@@ -83,6 +83,14 @@ st.set_page_config(
 # HELPERS
 # -------
 @st.cache_data(show_spinner=False)
+def load_data() -> pd.DataFrame:
+    """
+    Load the collaboration data from CSV.
+    Loads with caching for faster cold starts.
+    :return: The actor & filmmakers collaboration DataFrame.
+    """
+    return pd.read_csv(DATA_PATH, dtype=str)
+
 def build_graph(pairs: pd.DataFrame, min_edge_weight: int = 1) -> nx.Graph:
     """
     Build a co-appearance graph from (name, title) pairs.
@@ -520,7 +528,7 @@ with st.sidebar:
     if algo == CLIQUE_PERC_ALGO:
         cp_k = st.slider("k‑clique size (k)", 2, 10, 4)
 
-    top_n = st.slider("Number of actors and filmmakers (top‑N by total collaborations)", 25, 999, 200, 25)
+    top_n = st.slider("Number of actors and filmmakers (top‑N by total collaborations)", 25, 500, 200, 25)
     min_w = st.slider("Minimum shared titles between actors and filmmakers (min. edge weight)", 1, 10, 2)
 
     show_labels = st.checkbox("Show names on nodes", value=False)
@@ -533,7 +541,7 @@ st.title(SITE_TITLE)
 st.caption(SITE_CAPTION)
 
 # Load the dataset
-df = pd.read_csv(DATA_PATH, dtype=str)
+df = load_data()
 
 # ------------
 # DATA & GRAPH
@@ -648,7 +656,7 @@ with st.spinner("Rendering 3D network…"):
     })
 
     st.caption(
-        "Tip: If labels are cluttered, hide them and use hover tooltips. Increase min edge weight to focus on stronger ties."
+        "Tip: If labels are cluttered, hide them and use hover tooltips. Increase min. edge weight to focus on stronger ties."
     )
 
 if show_dendro:
