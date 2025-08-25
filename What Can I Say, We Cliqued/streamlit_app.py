@@ -1,7 +1,7 @@
 # Reel Patterns: What can I say, We cliqued
 #
 # Requirements
-#   pip install streamlit pandas networkx
+#   pip install -r requirements.txt
 #
 # Run
 #   python -m streamlit run streamlit_app.py
