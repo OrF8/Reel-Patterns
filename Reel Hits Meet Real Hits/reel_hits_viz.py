@@ -13,8 +13,8 @@ sound_df = pd.read_csv("..\\data\\reel_hits.csv").rename(columns={"tconst": "imd
 sound_df = sound_df[sound_df['album_popularity'] > 0]
 
 movie_df = pd.read_csv("..\\data\\clean_tmdb.csv")
-# Remove entries from top and bottom 5% revenue
-movie_df = movie_df[movie_df['revenue'].between(movie_df['revenue'].quantile(0.05), movie_df['revenue'].quantile(0.95))]
+# Remove entries from the bottom 5% revenue
+movie_df = movie_df[movie_df['revenue'].quantile(0.05) < movie_df['revenue']]
 
 df = pd.merge(sound_df, movie_df, on=["imdb_id", "title", "revenue"])
 
@@ -144,13 +144,18 @@ def create_vote_count_hist():
 
 def create_scatterplot_pop_vote():
     plt.figure(figsize=(10, 6))
-    sns.scatterplot(x='album_popularity', y='vote_average', data=df)
-    sns.regplot(x='album_popularity', y='vote_average', data=df, scatter=False, color='red', line_kws={"linewidth": 2})
-    plt.title("Album Popularity vs Vote Average", fontsize=16)
-    plt.xlabel("Album Popularity", fontsize=14)
-    plt.ylabel("Vote Average", fontsize=14)
-    plt.grid(True)
+    sns.scatterplot(x='album_popularity', y='vote_average', data=df, color='#A40000')
+    sns.regplot(x='album_popularity', y='vote_average', data=df, scatter=False, color='green', line_kws={"linewidth": 2})
+    plt.title("Correlation Between Soundtrack Popularity and Average Rating", fontsize=18, fontweight="bold")
+    plt.text(0.01, 0.98, "Corr=0.44", transform=plt.gca().transAxes,
+             fontsize=16, verticalalignment='top', color='#515151')
+    plt.xlabel("Album Popularity", fontsize=16)
+    plt.ylabel("Average Rating", fontsize=16)
+    plt.xticks(fontsize=14)
+    plt.yticks(fontsize=14)
+    plt.grid(False)
     plt.tight_layout()
+    plt.savefig("..\\figures\\corr_pop_rating.png")
     plt.show()
 
 
@@ -167,64 +172,6 @@ def create_scatterplot_pop_revenue():
 
 
 if __name__ == "__main__":
-    create_scatterplot_pop_revenue()
-
-
-# from scipy.stats import pearsonr, spearmanr
-#
-# def calc_corr_with_pvalues(data, method):
-#     """
-#     Calculate correlation matrix with p-values.
-#     :param data: The DataFrame containing the data.
-#     :param method: The correlation method ('pearson' or 'spearman').
-#     :return: A tuple of DataFrames (correlation matrix, p-value matrix).
-#     """
-#     cols = data.columns
-#     corr_matrix = pd.DataFrame(index=cols, columns=cols, dtype=float)
-#     pval_matrix = pd.DataFrame(index=cols, columns=cols, dtype=float)
-#
-#     for i in cols:
-#         for j in cols:
-#             if method == 'pearson':
-#                 corr, pval = pearsonr(data[i], data[j])
-#             elif method == 'spearman':
-#                 corr, pval = spearmanr(data[i], data[j])
-#             corr_matrix.loc[i, j] = corr
-#             pval_matrix.loc[i, j] = pval
-#
-#     return corr_matrix, pval_matrix
-#
-#
-# def create_heatmap_with_pvalues(method):
-#     """
-#     Create a heatmap with correlation coefficients and p-values.
-#     :param method: The correlation method ('pearson' or 'spearman').
-#     """
-#     if method == 'spearman':
-#         ranked_data = data.apply(rankdata)
-#         corr, pvals = calc_corr_with_pvalues(ranked_data, method)
-#     else:
-#         corr, pvals = calc_corr_with_pvalues(data, method)
-#
-#     # Combine correlation and p-values for annotations
-#     annotations = corr.round(2).astype(str) + "\n(p=" + pvals.round(3).astype(str) + ")"
-#
-#     # Plot heatmap
-#     plt.figure(figsize=FIG_SIZE)
-#     ax = sns.heatmap(data=corr, vmin=-1, vmax=1, annot=annotations, fmt="", cmap="viridis", square=True,
-#                      cbar_kws={"shrink": .8}, annot_kws={"size": 10})
-#     plt.title(f"{method.capitalize()} Correlation Heatmap with P-Values\n", fontsize=22, fontweight="bold")
-#     plt.xticks(rotation=0, fontsize=16)
-#     plt.yticks(rotation=0, fontsize=16)
-#
-#     cbar = ax.collections[0].colorbar
-#     cbar.ax.tick_params(labelsize=16)
-#     cbar.set_label(f"{method.capitalize()} Correlation", fontsize=18)
-#
-#     plt.tight_layout()
-#     plt.show()
-#
-#
-# # Example usage
-# create_heatmap_with_pvalues('pearson')
-# create_heatmap_with_pvalues('spearman')
+    # create_pearson_heatmap()
+    # create_spearman_heatmap()
+    create_scatterplot_pop_vote()
