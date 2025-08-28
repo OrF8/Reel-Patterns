@@ -6,12 +6,12 @@ from typing import Tuple, List
 from scipy.stats import rankdata
 
 FIG_SIZE: Tuple[int, int] = (13, 13)
-PEARSON_TITLE: str = "Pearson Correlation Heatmap For Movie's\nSuccess And Their Soundtrack Popularity\n"
+PEARSON_TITLE: str = "Pearson Correlation Heatmap For Movie's\nSuccess and Their Soundtrack Popularity\n"
 PEARSON_PATH: str = "..\\figures\\reel_hits_pearson_heatmap.png"
-SPEARMAN_TITLE: str = "Spearman Correlation Heatmap For Movie's\nSuccess And Their Soundtrack Popularity\n"
+SPEARMAN_TITLE: str = "Spearman Correlation Heatmap For Movie's\nSuccess and Their Soundtrack Popularity\n"
 SPEARMAN_PATH: str = "..\\figures\\reel_hits_spearman_heatmap.png"
 CORRELATION_LABEL_FMT: str = f"{{corr}} Correlation"
-SCATTER_TITLE: str = "Correlation Between Soundtrack Popularity And Average Rating"
+SCATTER_TITLE: str = "Correlation Between Soundtrack Popularity and Average Rating"
 SCATTER_PATH: str = "..\\figures\\corr_pop_rating.png"
 
 # Load dataset
