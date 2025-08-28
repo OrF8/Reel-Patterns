@@ -539,7 +539,7 @@ with st.sidebar:
 
     show_labels = st.checkbox("Show names on nodes", value=False)
 
-    show_dendro = st.checkbox("Show dendrogram (hierarchical clustering)", value=False)
+    show_dendro = st.checkbox("Show dendrogram", value=False)
     if show_dendro:
         linkage_method = st.selectbox("Dendrogram linkage", ["average", "complete", "single", WARD_LINKAGE], index=0)
 
