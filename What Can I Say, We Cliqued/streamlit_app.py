@@ -20,6 +20,8 @@ from typing import List, Tuple, Dict, Set, Union
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 
+MOVIE_TITLE_COL: str = "tconst"
+ACTOR_NAME_COL: str = "name"
 WEIGHT: str = "weight"
 DEFAULT_SEED: int = 42
 MIN_MARKER: int = 8
@@ -90,7 +92,8 @@ def load_data() -> pd.DataFrame:
     Loads with caching for faster cold starts.
     :return: The actor & filmmakers collaboration DataFrame.
     """
-    return pd.read_csv(DATA_PATH, dtype=str)
+    # Load only necessary columns as strings
+    return pd.read_csv(DATA_PATH, dtype=str, usecols=[MOVIE_TITLE_COL, ACTOR_NAME_COL])
 
 def build_graph(pairs: pd.DataFrame, min_edge_weight: int = 1) -> nx.Graph:
     """
@@ -102,7 +105,7 @@ def build_graph(pairs: pd.DataFrame, min_edge_weight: int = 1) -> nx.Graph:
     :return: A graph where nodes are actors/filmmakers and edges represent co-appearances.
     """
     # Group actors by title
-    actors_by_title = pairs.groupby("tconst")["name"].apply(list).to_dict()
+    actors_by_title = pairs.groupby(MOVIE_TITLE_COL)[ACTOR_NAME_COL].apply(list).to_dict()
     edge_weights = Counter()
     for cast in actors_by_title.values():
         # unique actors within a title to avoid double counting
@@ -461,13 +464,16 @@ def make_3d_figure(graph: nx.Graph, memberships: Union[Dict[str, int], None],
     h_labels = [node_texts[i] for i, m in enumerate(mask) if m] if show_labels else None
     h_sizes = [max(12, node_sizes[i] + 6) for i, m in enumerate(mask) if m]
     h_colors = [HIGHLIGHT_NODE_COLOR] * len(hx)
+    h_hover_texts = [
+        f"⭐ {hover_texts[index]}" for index, m in enumerate(mask) if m
+    ]
 
     node_trace_hi = go.Scatter3d(
         x=hx, y=hy, z=hz,
         mode=NODE_MODE_IF_LABELS if show_labels else NODE_MODE_NO_LABELS,
         text=h_labels,
         textposition=NODE_POS,
-        hovertext=hover_texts,
+        hovertext=h_hover_texts,
         hoverinfo=NODE_HOVER_INFO,
         marker=dict(size=h_sizes, color=h_colors, line=dict(width=1.5, color=HIGHLIGHT_NODE_MARKER_COLOR)),
         name="Bridge nodes", showlegend=True,
@@ -521,7 +527,6 @@ with st.sidebar:
     if algo == LOUVAIN_ALGO:
         res = st.slider("Resolution parameter", 0.1, 2.0, 1.0, 0.1)
     if algo == GN_ALGO:
-        gn_k = st.slider("Target number of communities (approx.)", 2, 20, 6)
         show_bridges = st.checkbox("Highlight bridges 🔎", value=(algo == GN_ALGO))
         bridge_metric = st.selectbox("Bridge metric (nodes)", [BETWEENNESS_METRIC, BRIDGING_CENTRALITY_METRIC, PARTICIPATION_METRIC],
                                      index=1)
@@ -543,7 +548,6 @@ st.caption(SITE_CAPTION)
 
 # Load the dataset
 df = load_data()
-df = df.drop(columns='title')
 
 # ------------
 # DATA & GRAPH
@@ -565,7 +569,7 @@ with st.spinner(f"Running {algo}…"):
     if algo == LOUVAIN_ALGO:
         membership, communities = run_louvain(G, resolution=res)
     elif algo == GN_ALGO:
-        membership, communities = run_girvan_newman(G, num_communities=gn_k)
+        membership, communities = run_girvan_newman(G)
     else:  # Clique Percolation
         membership, communities = run_k_clique(G, k=cp_k)
 
@@ -612,8 +616,8 @@ if algo == GN_ALGO and show_bridges and membership:
     # top‑k bridge nodes by chosen metric
     bridge_nodes = set(df_nodes.nlargest(top_k_nodes, metric_col)[NODE_COL])
 
-    # top inter‑community edges by edge betweenness
-    top_e = df_edges[df_edges[INTER_COMMUNITY]].nlargest(50, EDGE_BETWEENNESS)
+    # top-k inter‑community edges by edge betweenness
+    top_e = df_edges[df_edges[INTER_COMMUNITY]].nlargest(top_k_nodes, EDGE_BETWEENNESS)
     bridge_edges = set(tuple(sorted((r.u, r.v))) for r in top_e.itertuples(index=False))
 
 # ---------------------------
