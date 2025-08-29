@@ -532,7 +532,8 @@ def make_3d_figure(graph: nx.Graph, memberships: Union[Dict[str, int], None],
         hy = [pos3d[n][1] for n, m in zip(graph.nodes(), mask) if m]
         hz = [pos3d[n][2] for n, m in zip(graph.nodes(), mask) if m]
         highlighted_labels = [id_to_name.get(n, n) for n, m in zip(graph.nodes(), mask) if m] if show_labels else None
-        highlighted_texts = [(f"⭐ <span style='color:{generate_hsl_color(memberships.get(n, -1), n_comm)}'>{id_to_name.get(n, n)} "
+        highlighted_texts = [(f"⭐ <span style='color:{generate_hsl_color(memberships.get(n, -1), n_comm)}'>"
+                              f"{id_to_name.get(n, n)} "
                               f"(Community {memberships.get(n, -1) + 1 if memberships else 'N/A'})</span>")
                              for n, m in zip(graph.nodes(), mask) if m]
         highlighted_sizes = [max(12, scale_size(strength[n]) + 6) for n, m in zip(graph.nodes(), mask) if m]
