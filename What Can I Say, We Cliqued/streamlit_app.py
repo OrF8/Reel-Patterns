@@ -25,10 +25,11 @@ ACTOR_NAME_COL: str = "name"
 ACTOR_NAME_ID_COL: str = "nconst"
 WEIGHT: str = "weight"
 DEFAULT_SEED: int = 42
-DEFAULT_RESOLUTION: int = 1.0
 MIN_MARKER: int = 8
 MAX_MARKER_ADDITION: int = 12
 LEGEND_MARKER_SIZE: int = 8
+DEFAULT_RESOLUTION: float = 1.0
+LEGEND_COMM_FMT: str = f"Community {{id}}"
 INVERSE_WEIGHT: str = "inv_w"
 NODE_COL: str = "node"
 COMMUNITY_COL: str = "community"
@@ -295,11 +296,10 @@ def compute_bridge_metrics(graph: nx.Graph, memberships: Dict[str, int], weight:
     bridging = {n: node_b.get(n, 0.0) * (1.0 - clust.get(n, 0.0)) for n in graph.nodes()}
 
     # Inter- vs intra-community degree
-    from collections import defaultdict as dd
-    deg = dict(graph.degree())
+    deg: Dict[str, int] = dict(graph.degree())
     intra = {n: 0 for n in graph.nodes()}
     inter = {n: 0 for n in graph.nodes()}
-    neigh_comm = {n: dd(int) for n in graph.nodes()}
+    neigh_comm = {n: defaultdict(int) for n in graph.nodes()}
 
     # Count inter/intra edges and neighbors per community
     for u, v in graph.edges():
@@ -417,7 +417,7 @@ def make_3d_figure(graph: nx.Graph, memberships: Union[Dict[str, int], None],
 
     traces = []
 
-    # Highlighted edges (unchanged)
+    # Highlighted edges
     h_ex, h_ey, h_ez = [], [], []
     for (u, v) in highlight_edges:
         if u in graph and v in graph:
@@ -433,15 +433,17 @@ def make_3d_figure(graph: nx.Graph, memberships: Union[Dict[str, int], None],
             hoverinfo=EDGE_HOVER_INFO, showlegend=True, name="Bridge edges"
         ))
 
+    n_comm: int = 0
+
     if memberships:
-        # use the SAME color mapping as before
+        # community-colored rendering (multiple traces)
         n_comm = max(memberships.values()) + 1
 
-        for cid in range(n_comm):  # keep original Community 1..k ordering
+        for cid in range(n_comm):  # for each community, create a trace for its nodes and intra-community edges
             group_id = f"comm{cid}"
             color = generate_hsl_color(cid, n_comm)
 
-            # nodes in this community (keep sizes/labels/hover identical)
+            # nodes in this community
             nodes_in_comm = [n for n in graph.nodes() if memberships.get(n) == cid]
             if not nodes_in_comm:
                 continue
@@ -456,7 +458,7 @@ def make_3d_figure(graph: nx.Graph, memberships: Union[Dict[str, int], None],
                 for n in nodes_in_comm
             ]
 
-            # intra-community edges for this community (same style as before)
+            # intra-community edges for this community
             ex, ey, ez = [], [], []
             for u, v in graph.edges(nodes_in_comm):
                 if memberships.get(u) == cid and memberships.get(v) == cid:
@@ -481,7 +483,7 @@ def make_3d_figure(graph: nx.Graph, memberships: Union[Dict[str, int], None],
                 text=text_labels, textposition=NODE_POS,
                 hovertext=hover_texts, hoverinfo=NODE_HOVER_INFO,
                 marker=dict(size=sizes, color=color, line=dict(width=0.5, color=NODE_COLOR)),
-                name=f"Community {cid + 1}", showlegend=False, legendgroup=group_id
+                name=LEGEND_COMM_FMT.format(id=cid+1), showlegend=False, legendgroup=group_id
             ))
 
             # legend-only dummy with controlled size
@@ -490,7 +492,7 @@ def make_3d_figure(graph: nx.Graph, memberships: Union[Dict[str, int], None],
                 mode="markers",
                 marker=dict(size=LEGEND_MARKER_SIZE, color=color,
                             line=dict(width=0.5, color=NODE_COLOR)),
-                name=f"Community {cid + 1}", showlegend=True, legendgroup=group_id
+                name=LEGEND_COMM_FMT.format(id=cid+1), showlegend=True, legendgroup=group_id
             ))
 
     else:
@@ -499,8 +501,8 @@ def make_3d_figure(graph: nx.Graph, memberships: Union[Dict[str, int], None],
         for u, v in graph.edges():
             x0, y0, z0 = pos3d[u]
             x1, y1, z1 = pos3d[v]
-            ex += [x0, x1, None];
-            ey += [y0, y1, None];
+            ex += [x0, x1, None]
+            ey += [y0, y1, None]
             ez += [z0, z1, None]
         traces.append(go.Scatter3d(
             x=ex, y=ey, z=ez, mode=EDGE_MODE,
@@ -530,12 +532,15 @@ def make_3d_figure(graph: nx.Graph, memberships: Union[Dict[str, int], None],
         hy = [pos3d[n][1] for n, m in zip(graph.nodes(), mask) if m]
         hz = [pos3d[n][2] for n, m in zip(graph.nodes(), mask) if m]
         highlighted_labels = [id_to_name.get(n, n) for n, m in zip(graph.nodes(), mask) if m] if show_labels else None
+        highlighted_texts = [(f"⭐ <span style='color:{generate_hsl_color(memberships.get(n, -1), n_comm)}'>{id_to_name.get(n, n)} "
+                              f"(Community {memberships.get(n, -1) + 1 if memberships else 'N/A'})</span>")
+                             for n, m in zip(graph.nodes(), mask) if m]
         highlighted_sizes = [max(12, scale_size(strength[n]) + 6) for n, m in zip(graph.nodes(), mask) if m]
         traces.append(go.Scatter3d(
             x=hx, y=hy, z=hz,
             mode=NODE_MODE_IF_LABELS if show_labels else NODE_MODE_NO_LABELS,
             text=highlighted_labels, textposition=NODE_POS,
-            hovertext=[f"⭐ {id_to_name.get(n, n)}" for n, m in zip(graph.nodes(), mask) if m],
+            hovertext=highlighted_texts,
             hoverinfo=NODE_HOVER_INFO,
             marker=dict(size=highlighted_sizes, color=HIGHLIGHT_NODE_COLOR,
                         line=dict(width=1.5, color=HIGHLIGHT_NODE_MARKER_COLOR)),
@@ -635,7 +640,6 @@ if membership:
     # Ensure communities includes everything in `membership`
     if not communities:
         # Reconstruct from membership if the algorithm didn't return communities
-        from collections import defaultdict
         comm_map = defaultdict(set)
         for node, cid in membership.items():
             comm_map[cid].add(node)
