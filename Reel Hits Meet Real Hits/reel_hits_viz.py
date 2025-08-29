@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import seaborn as sns
 import numpy as np
@@ -5,21 +6,24 @@ import matplotlib.pyplot as plt
 from typing import Tuple, List
 from scipy.stats import rankdata
 
+IS_LINUX: bool = os.name == "posix"
 FIG_SIZE: Tuple[int, int] = (13, 13)
 PEARSON_TITLE: str = "Pearson Correlation Heatmap For Movie's\nSuccess and Their Soundtrack Popularity\n"
-PEARSON_PATH: str = "..\\figures\\reel_hits_pearson_heatmap.png"
+PEARSON_PATH: str = "../figures/reel_hits_pearson_heatmap.png" if IS_LINUX else "..\\figures\\reel_hits_pearson_heatmap.png"
 SPEARMAN_TITLE: str = "Spearman Correlation Heatmap For Movie's\nSuccess and Their Soundtrack Popularity\n"
-SPEARMAN_PATH: str = "..\\figures\\reel_hits_spearman_heatmap.png"
+SPEARMAN_PATH: str = "../figures/reel_hits_spearman_heatmap.png" if IS_LINUX else "..\\figures\\reel_hits_spearman_heatmap.png"
 CORRELATION_LABEL_FMT: str = f"{{corr}} Correlation"
 SCATTER_TITLE: str = "Correlation Between Soundtrack Popularity and Average Rating"
-SCATTER_PATH: str = "..\\figures\\corr_pop_rating.png"
+SCATTER_PATH: str = "../figures/corr_pop_rating.png" if IS_LINUX else "..\\figures\\corr_pop_rating.png"
+SOUND_PATH: str = "../data/reel_hits.csv"if IS_LINUX else "..\\data\\reel_hits.csv"
+MOVIE_PATH: str = "../data/clean_tmdb.csv" if IS_LINUX else "..\\data\\clean_tmdb.csv"
 
 # Load dataset
-sound_df: pd.DataFrame = pd.read_csv("..\\data\\reel_hits.csv").rename(columns={"tconst": "imdb_id"})
+sound_df: pd.DataFrame = pd.read_csv(SOUND_PATH).rename(columns={"tconst": "imdb_id"})
 # Remove entries with zero album popularity
 sound_df = sound_df[sound_df['album_popularity'] > 0]
 
-movie_df: pd.DataFrame = pd.read_csv("..\\data\\clean_tmdb.csv")
+movie_df: pd.DataFrame = pd.read_csv(MOVIE_PATH)
 # Remove entries from the bottom 5% revenue
 movie_df = movie_df[movie_df['revenue'].quantile(0.05) < movie_df['revenue']]
 

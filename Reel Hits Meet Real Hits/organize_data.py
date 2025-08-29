@@ -7,8 +7,6 @@ from rapidfuzz import fuzz
 from dotenv import load_dotenv
 from typing import Union, List, Tuple, Any, Dict, Set, Optional
 
-from organize_data import df_reel_hits
-
 # Load environment variables from .env file (API keys)
 load_dotenv()
 
@@ -22,10 +20,12 @@ sp: spotipy.Spotify = spotipy.Spotify(client_credentials_manager=cred_manager,
 SOUNDTRACK_HINTS: Tuple[str, str, str, str, str] = (
     "soundtrack", "original motion picture", "music from the motion picture", "original score", "ost"
 )
-CLEAN_TMDB: pd.DataFrame = pd.read_csv("..\\data\\clean_tmdb.csv")
-BIG_REEL_HITS_PATH: str = "..\\data\\reel_hits_big.csv"
-SMALL_REEL_HITS_PATH: str = "..\\data\\reel_hits_small.csv"
-REEL_HITS_PATH: str = "..\\data\\reel_hits.csv"
+IS_LINUX: bool = os.name == "posix"
+TMDB_PATH: str = "../data/clean_tmdb.csv" if IS_LINUX else "..\\data\\clean_tmdb.csv"
+CLEAN_TMDB: pd.DataFrame = pd.read_csv(TMDB_PATH)
+BIG_REEL_HITS_PATH: str = "../data/reel_hits_big.csv" if IS_LINUX else "..\\data\\reel_hits_big.csv"
+SMALL_REEL_HITS_PATH: str = "../data/reel_hits_small.csv" if IS_LINUX else "..\\data\\reel_hits_small.csv"
+REEL_HITS_PATH: str = "../data/reel_hits.csv" if IS_LINUX else "..\\data\\reel_hits.csv"
 IMDB_ID_COL: str = "tconst"
 MOVIE_TITLE_COL: str = "title"
 MOVIE_YEAR_COL: str = "year"
