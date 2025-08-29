@@ -22,6 +22,7 @@ from scipy.spatial.distance import pdist
 
 MOVIE_TITLE_COL: str = "tconst"
 ACTOR_NAME_COL: str = "name"
+ACTOR_NAME_ID_COL: str = "nconst"
 WEIGHT: str = "weight"
 DEFAULT_SEED: int = 42
 MIN_MARKER: int = 8
@@ -93,8 +94,20 @@ def load_data() -> pd.DataFrame:
     :return: The actor & filmmakers collaboration DataFrame.
     """
     # Load only necessary columns as strings
-    return pd.read_csv(DATA_PATH, dtype=str, usecols=[MOVIE_TITLE_COL, ACTOR_NAME_COL])
+    return pd.read_csv(DATA_PATH, dtype=str, usecols=[MOVIE_TITLE_COL, ACTOR_NAME_COL, ACTOR_NAME_ID_COL])
 
+
+@st.cache_data(show_spinner=False)
+def create_id_to_name_map(df: pd.DataFrame) -> Dict[str, str]:
+    """
+    Create a mapping from actor/filmmaker ID to name.
+    :param df: The actor & filmmakers collaboration DataFrame.
+    :return: A dictionary mapping nconst -> name.
+    """
+    return dict(zip(df[ACTOR_NAME_ID_COL], df[ACTOR_NAME_COL]))
+
+
+@st.cache_data(show_spinner=False)
 def build_graph(pairs: pd.DataFrame, min_edge_weight: int = 1) -> nx.Graph:
     """
     Build a co-appearance graph from (name, title) pairs.
@@ -105,7 +118,7 @@ def build_graph(pairs: pd.DataFrame, min_edge_weight: int = 1) -> nx.Graph:
     :return: A graph where nodes are actors/filmmakers and edges represent co-appearances.
     """
     # Group actors by title
-    actors_by_title = pairs.groupby(MOVIE_TITLE_COL)[ACTOR_NAME_COL].apply(list).to_dict()
+    actors_by_title = pairs.groupby(MOVIE_TITLE_COL)[ACTOR_NAME_ID_COL].apply(list).to_dict()
     edge_weights = Counter()
     for cast in actors_by_title.values():
         # unique actors within a title to avoid double counting
@@ -132,10 +145,10 @@ def graph_to_feature_matrix(graph: nx.Graph, weight: str = WEIGHT) -> tuple[list
              - List of node labels (in the order corresponding to rows of the matrix).
              - 2D numpy array representing the feature matrix.
     """
-    nodes = list(graph.nodes())
+    nodes = [id_to_name.get(n, n) for n in graph.nodes()]
 
     # Create an index mapping for nodes
-    index = {n: i for i, n in enumerate(nodes)}
+    index = {n: i for i, n in enumerate(graph.nodes())}
     n = len(nodes)
 
     # Initialize adjacency matrix
@@ -404,13 +417,14 @@ def make_3d_figure(graph: nx.Graph, memberships: Union[Dict[str, int], None],
     ny_list = [pos3d[n][1] for n in graph.nodes()]
     nz_list = [pos3d[n][2] for n in graph.nodes()]
     node_sizes = [scale_size(strength[n]) for n in graph.nodes()]
+
     hover_texts = [
-        f"<span style='color:{node_color[i]}'>{n} (Community {memberships.get(n, -1) + 1})</span>"
+        f"<span style='color:{node_color[i]}'>{id_to_name.get(n, n)} (Community {memberships.get(n, -1) + 1})</span>"
         if memberships else f"{n}"
         for i, n in enumerate(graph.nodes())
     ]
 
-    node_texts  = [str(n) for n in graph.nodes()] if show_labels else None
+    node_texts = [id_to_name.get(n, n) for n in graph.nodes()] if show_labels else None
 
     # Build edge segments (base + highlighted)
     ex, ey, ez = [], [], []
@@ -549,6 +563,9 @@ st.caption(SITE_CAPTION)
 # Load the dataset
 df = load_data()
 
+# Build a lookup from nconst to name, for name labels
+id_to_name = create_id_to_name_map(df)
+
 # ------------
 # DATA & GRAPH
 # ------------
@@ -644,7 +661,8 @@ with right:
         if sel:
             idx = options.index(sel)
             st.write(
-                ", ".join(sorted(list(communities[idx]))[:100]) + (" …" if len(communities[idx]) > 100 else "")
+                ", ".join(sorted([id_to_name.get(n, n) for n in communities[idx]])[:100]) +
+                (" …" if len(communities[idx]) > 100 else "")
             )
 
 # -------------
