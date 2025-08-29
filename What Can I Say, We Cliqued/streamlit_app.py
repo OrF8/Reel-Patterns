@@ -25,8 +25,10 @@ ACTOR_NAME_COL: str = "name"
 ACTOR_NAME_ID_COL: str = "nconst"
 WEIGHT: str = "weight"
 DEFAULT_SEED: int = 42
+DEFAULT_RESOLUTION: int = 1.0
 MIN_MARKER: int = 8
 MAX_MARKER_ADDITION: int = 12
+LEGEND_MARKER_SIZE: int = 8
 INVERSE_WEIGHT: str = "inv_w"
 NODE_COL: str = "node"
 COMMUNITY_COL: str = "community"
@@ -68,7 +70,20 @@ PARTICIPATION_METRIC: str ="Participation"
 WARD_LINKAGE: str = "ward"
 SITE_TITLE: str  = "🎬 Reel Patterns: Co‑appearance Communities"
 SITE_CAPTION: str = "Explore which actors and filmmakers tend to appear together, tune thresholds, and compare community algorithms."
-DATA_PATH: str = "data/collabs.csv" if os.name == "posix" else "data\\collabs.csv"
+# Explanations for bridge metrics
+METRIC_EXPL: Dict[str, str] = {
+            BETWEENNESS_METRIC: "high betweenness centrality — they lie on many shortest paths between different communities",
+            BRIDGING_CENTRALITY_METRIC: "high bridging centrality - they connect otherwise tight groups",
+            PARTICIPATION_METRIC: "high participation coefficient — their neighbors are spread across several communities",
+        }
+GN_CAPTION_FMT: str = f"""
+**Bridge nodes**: The top-{{top_k_nodes}} nodes by {{metric_expl}}.\n
+**Bridge edges**: Inter-community edges with the highest edge betweenness (top-{{top_k_nodes}}).\n
+*Note:* When you isolate a single community via the legend, inter-community bridge edges are hidden.
+"""
+IS_LINUX: bool = os.name == "posix"
+# Note: The streamlit app is ran from the root directory, so paths are relative to that
+DATA_PATH: str = "data/collabs.csv" if IS_LINUX else "data\\collabs.csv"
 DENDROGRAM_TITLE_FMT: str = f"Dendrogram Hierarchy (linkage = {{linkage_method}})"
 BROWSE_COMM_OPTIONS_MULT_FMT: str = f"#{{i}} – {{size}} actors & filmmakers"
 BROWSE_COMM_OPTIONS_SINGLE_FMT: str = f"#{{i}} – 1 actor or filmmaker"
@@ -183,13 +198,13 @@ def top_n_subgraph(graph: nx.Graph, n: int) -> nx.Graph:
     return graph.subgraph(top_nodes).copy()
 
 
-def run_louvain(graph: nx.Graph, resolution: float = 1.0, seed: Union[int, None] = DEFAULT_SEED,
+def run_louvain(graph: nx.Graph, resolution: float = DEFAULT_RESOLUTION, seed: Union[int, None] = DEFAULT_SEED,
                 weight: str = WEIGHT) -> Tuple[Dict[str, int], List[Set[str]]]:
     """
     Runs Louvain community detection on the given graph.
     :param: graph: The input graph (NetworkX Graph).
-    :param: resolution: Resolution parameter for community detection (default 1.0).
-    :param: seed: Random seed for reproducibility (default SEED).
+    :param: resolution: Resolution parameter for community detection (default DEFAULT_RESOLUTION).
+    :param: seed: Random seed for reproducibility (default DEFAULT_SEED).
     :param: weight: Edge attribute to use as weight (default WEIGHT).
 
     :return: tuple of:
@@ -364,7 +379,6 @@ def generate_hsl_color(comm_id: int, total_groups: int) -> str:
 
 
 def make_3d_figure(graph: nx.Graph, memberships: Union[Dict[str, int], None],
-                   show_labels: bool,
                    highlight_nodes: Set[str] = frozenset(),
                    highlight_edges: Set[Tuple[str, str]] = frozenset()) -> go.Figure:
     """
@@ -373,7 +387,6 @@ def make_3d_figure(graph: nx.Graph, memberships: Union[Dict[str, int], None],
     Nodes are sized by their strength (weighted degree).
     :param graph: The input graph (NetworkX Graph).
     :param memberships: A mapping from node -> community_id (or None for no coloring).
-    :param show_labels: Whether to show node labels.
     :param highlight_nodes: Set of nodes to highlight (bridge nodes).
     :param highlight_edges: Set of edges to highlight (bridge edges).
     :return: A Plotly Figure object.
@@ -402,102 +415,134 @@ def make_3d_figure(graph: nx.Graph, memberships: Union[Dict[str, int], None],
             return (MIN_MARKER + MAX_MARKER_ADDITION) / 2
         return MIN_MARKER + MAX_MARKER_ADDITION * (s - s_min) / (s_max - s_min)
 
-    # Colors per community
-    if memberships:
-        n_comm = max(memberships.values()) + 1
-        colors = [generate_hsl_color(index, n_comm) for index in range(n_comm)]
-        node_color = [colors[memberships.get(n, 0)] for n in graph.nodes()]
-        legend_groups = {cid: f"Community {cid + 1}" for cid in range(n_comm)}
-    else:
-        node_color = DEFAULT_NODE_COLOR
-        legend_groups = {}
+    traces = []
 
-    # Node coordinates + labels
-    nx_list = [pos3d[n][0] for n in graph.nodes()]
-    ny_list = [pos3d[n][1] for n in graph.nodes()]
-    nz_list = [pos3d[n][2] for n in graph.nodes()]
-    node_sizes = [scale_size(strength[n]) for n in graph.nodes()]
-
-    hover_texts = [
-        f"<span style='color:{node_color[i]}'>{id_to_name.get(n, n)} (Community {memberships.get(n, -1) + 1})</span>"
-        if memberships else f"{n}"
-        for i, n in enumerate(graph.nodes())
-    ]
-
-    node_texts = [id_to_name.get(n, n) for n in graph.nodes()] if show_labels else None
-
-    # Build edge segments (base + highlighted)
-    ex, ey, ez = [], [], []
+    # Highlighted edges (unchanged)
     h_ex, h_ey, h_ez = [], [], []
+    for (u, v) in highlight_edges:
+        if u in graph and v in graph:
+            x0, y0, z0 = pos3d[u]
+            x1, y1, z1 = pos3d[v]
+            h_ex += [x0, x1, None]
+            h_ey += [y0, y1, None]
+            h_ez += [z0, z1, None]
+    if h_ex:
+        traces.append(go.Scatter3d(
+            x=h_ex, y=h_ey, z=h_ez, mode=EDGE_MODE,
+            line=dict(width=4, color=HIGHLIGHT_EDGE_COLOR),
+            hoverinfo=EDGE_HOVER_INFO, showlegend=True, name="Bridge edges"
+        ))
 
-    for u, v, d in graph.edges(data=True):
-        x0, y0, z0 = pos3d[u]
-        x1, y1, z1 = pos3d[v]
-        seg = ([x0, x1, None], [y0, y1, None], [z0, z1, None])
-        e_key = tuple(sorted((u, v)))
-        if e_key in highlight_edges:
-            h_ex += seg[0]
-            h_ey += seg[1]
-            h_ez += seg[2]
-        else:
-            ex += seg[0]
-            ey += seg[1]
-            ez += seg[2]
+    if memberships:
+        # use the SAME color mapping as before
+        n_comm = max(memberships.values()) + 1
 
-    # Base edges (thin, light)
-    edge_trace_base = go.Scatter3d(
-        x=ex, y=ey, z=ez, mode=EDGE_MODE,
-        line=dict(width=1, color=EDGE_COLOR),
-        hoverinfo=EDGE_HOVER_INFO, showlegend=False, name="Edges"
-    )
+        for cid in range(n_comm):  # keep original Community 1..k ordering
+            group_id = f"comm{cid}"
+            color = generate_hsl_color(cid, n_comm)
 
-    # highlighted edges (thicker, bright)
-    edge_trace_hi = go.Scatter3d(
-        x=h_ex, y=h_ey, z=h_ez, mode=EDGE_MODE,
-        line=dict(width=4, color=HIGHLIGHT_EDGE_COLOR),
-        hoverinfo=EDGE_HOVER_INFO, showlegend=True, name="Bridge edges"
-    )
+            # nodes in this community (keep sizes/labels/hover identical)
+            nodes_in_comm = [n for n in graph.nodes() if memberships.get(n) == cid]
+            if not nodes_in_comm:
+                continue
 
-    # Base nodes
-    node_trace = go.Scatter3d(
-        x=nx_list, y=ny_list, z=nz_list,
-        mode=NODE_MODE_IF_LABELS if show_labels else NODE_MODE_NO_LABELS,
-        text=node_texts,
-        textposition=NODE_POS,
-        hovertext=hover_texts,
-        hoverinfo=NODE_HOVER_INFO,
-        marker=dict(size=node_sizes, color=node_color, line=dict(width=0.5, color=NODE_COLOR)),
-        name="Nodes", showlegend=False,
-    )
+            xs = [pos3d[n][0] for n in nodes_in_comm]
+            ys = [pos3d[n][1] for n in nodes_in_comm]
+            zs = [pos3d[n][2] for n in nodes_in_comm]
+            sizes = [scale_size(strength[n]) for n in nodes_in_comm]
+            text_labels = [id_to_name.get(n, n) for n in nodes_in_comm] if show_labels else None
+            hover_texts = [
+                f"<span style='color:{color}'>{id_to_name.get(n, n)} (Community {cid + 1})</span>"
+                for n in nodes_in_comm
+            ]
 
-    # Highlighted nodes (bigger, bright outline)
+            # intra-community edges for this community (same style as before)
+            ex, ey, ez = [], [], []
+            for u, v in graph.edges(nodes_in_comm):
+                if memberships.get(u) == cid and memberships.get(v) == cid:
+                    x0, y0, z0 = pos3d[u]
+                    x1, y1, z1 = pos3d[v]
+                    ex += [x0, x1, None]
+                    ey += [y0, y1, None]
+                    ez += [z0, z1, None]
+
+            # edges (no legend item, but grouped with nodes)
+            traces.append(go.Scatter3d(
+                x=ex, y=ey, z=ez, mode=EDGE_MODE,
+                line=dict(width=1, color=EDGE_COLOR),
+                hoverinfo=EDGE_HOVER_INFO,
+                showlegend=False, legendgroup=group_id
+            ))
+
+            # nodes (no legend)
+            traces.append(go.Scatter3d(
+                x=xs, y=ys, z=zs,
+                mode=NODE_MODE_IF_LABELS if show_labels else NODE_MODE_NO_LABELS,
+                text=text_labels, textposition=NODE_POS,
+                hovertext=hover_texts, hoverinfo=NODE_HOVER_INFO,
+                marker=dict(size=sizes, color=color, line=dict(width=0.5, color=NODE_COLOR)),
+                name=f"Community {cid + 1}", showlegend=False, legendgroup=group_id
+            ))
+
+            # legend-only dummy with controlled size
+            traces.append(go.Scatter3d(
+                x=[None], y=[None], z=[None],
+                mode="markers",
+                marker=dict(size=LEGEND_MARKER_SIZE, color=color,
+                            line=dict(width=0.5, color=NODE_COLOR)),
+                name=f"Community {cid + 1}", showlegend=True, legendgroup=group_id
+            ))
+
+    else:
+        # fallback: original single-trace rendering (no communities)
+        ex, ey, ez = [], [], []
+        for u, v in graph.edges():
+            x0, y0, z0 = pos3d[u]
+            x1, y1, z1 = pos3d[v]
+            ex += [x0, x1, None];
+            ey += [y0, y1, None];
+            ez += [z0, z1, None]
+        traces.append(go.Scatter3d(
+            x=ex, y=ey, z=ez, mode=EDGE_MODE,
+            line=dict(width=1, color=EDGE_COLOR),
+            hoverinfo=EDGE_HOVER_INFO, showlegend=False, name="Edges"
+        ))
+
+        nx_list = [pos3d[n][0] for n in graph.nodes()]
+        ny_list = [pos3d[n][1] for n in graph.nodes()]
+        nz_list = [pos3d[n][2] for n in graph.nodes()]
+        node_sizes = [scale_size(strength[n]) for n in graph.nodes()]
+        node_texts = [id_to_name.get(n, n) for n in graph.nodes()] if show_labels else None
+        hover_texts = [f"{n}" for n in graph.nodes()]
+        traces.append(go.Scatter3d(
+            x=nx_list, y=ny_list, z=nz_list,
+            mode=NODE_MODE_IF_LABELS if show_labels else NODE_MODE_NO_LABELS,
+            text=node_texts, textposition=NODE_POS,
+            hovertext=hover_texts, hoverinfo=NODE_HOVER_INFO,
+            marker=dict(size=node_sizes, color=DEFAULT_NODE_COLOR, line=dict(width=0.5, color=NODE_COLOR)),
+            name="Nodes", showlegend=False,
+        ))
+
+    # highlighted nodes (unchanged; stays as its own legend item)
     mask = [n in highlight_nodes for n in graph.nodes()]
-    hx = [nx_list[i] for i, m in enumerate(mask) if m]
-    hy = [ny_list[i] for i, m in enumerate(mask) if m]
-    hz = [nz_list[i] for i, m in enumerate(mask) if m]
-    h_labels = [node_texts[i] for i, m in enumerate(mask) if m] if show_labels else None
-    h_sizes = [max(12, node_sizes[i] + 6) for i, m in enumerate(mask) if m]
-    h_colors = [HIGHLIGHT_NODE_COLOR] * len(hx)
-    h_hover_texts = [
-        f"⭐ {hover_texts[index]}" for index, m in enumerate(mask) if m
-    ]
-
-    node_trace_hi = go.Scatter3d(
-        x=hx, y=hy, z=hz,
-        mode=NODE_MODE_IF_LABELS if show_labels else NODE_MODE_NO_LABELS,
-        text=h_labels,
-        textposition=NODE_POS,
-        hovertext=h_hover_texts,
-        hoverinfo=NODE_HOVER_INFO,
-        marker=dict(size=h_sizes, color=h_colors, line=dict(width=1.5, color=HIGHLIGHT_NODE_MARKER_COLOR)),
-        name="Bridge nodes", showlegend=True,
-    )
-
-    traces = [edge_trace_base]
-    traces += [edge_trace_hi, node_trace, node_trace_hi]
+    if any(mask):
+        hx = [pos3d[n][0] for n, m in zip(graph.nodes(), mask) if m]
+        hy = [pos3d[n][1] for n, m in zip(graph.nodes(), mask) if m]
+        hz = [pos3d[n][2] for n, m in zip(graph.nodes(), mask) if m]
+        highlighted_labels = [id_to_name.get(n, n) for n, m in zip(graph.nodes(), mask) if m] if show_labels else None
+        highlighted_sizes = [max(12, scale_size(strength[n]) + 6) for n, m in zip(graph.nodes(), mask) if m]
+        traces.append(go.Scatter3d(
+            x=hx, y=hy, z=hz,
+            mode=NODE_MODE_IF_LABELS if show_labels else NODE_MODE_NO_LABELS,
+            text=highlighted_labels, textposition=NODE_POS,
+            hovertext=[f"⭐ {id_to_name.get(n, n)}" for n, m in zip(graph.nodes(), mask) if m],
+            hoverinfo=NODE_HOVER_INFO,
+            marker=dict(size=highlighted_sizes, color=HIGHLIGHT_NODE_COLOR,
+                        line=dict(width=1.5, color=HIGHLIGHT_NODE_MARKER_COLOR)),
+            name="Bridge nodes", showlegend=True
+        ))
 
     figure = go.Figure(data=traces)
-
     figure.update_layout(
         width=1200,
         height=800,
@@ -510,23 +555,13 @@ def make_3d_figure(graph: nx.Graph, memberships: Union[Dict[str, int], None],
             bgcolor=GRAPH_BG_COLOR,
         ),
         title=dict(text=GRAPH_TITLE, x=0.5, xanchor=GRAPH_X_ANCHOR),
-        uirevision="keep"
+        uirevision="keep",
+        legend=dict(
+            orientation="h", yanchor="bottom", y=0.02, x=0.5, xanchor=GRAPH_X_ANCHOR,
+            itemclick="toggleothers", groupclick="togglegroup",
+            itemsizing="trace"
+        )
     )
-    # Add a legend for communities
-    if memberships:
-        # add dummy invisible traces just to show legend entries
-        for comm_id, label in legend_groups.items():
-            figure.add_trace(
-                go.Scatter3d(
-                    x=[None], y=[None], z=[None],
-                    mode=NODE_MODE_NO_LABELS,
-                    marker=dict(size=10, color=generate_hsl_color(comm_id, len(legend_groups))),
-                    name=label,
-                    showlegend=True
-                )
-            )
-        figure.update_layout(legend=dict(orientation="h", yanchor="bottom", y=0.02, x=0.5, xanchor=GRAPH_X_ANCHOR))
-
     return figure
 
 
@@ -539,7 +574,7 @@ with st.sidebar:
     algo = st.selectbox("Community algorithm", [LOUVAIN_ALGO, GN_ALGO, CLIQUE_PERC_ALGO], index=0)
 
     if algo == LOUVAIN_ALGO:
-        res = st.slider("Resolution parameter", 0.1, 2.0, 1.0, 0.1)
+        res = st.slider("Resolution parameter", 0.1, 2.0, DEFAULT_RESOLUTION, 0.1)
     if algo == GN_ALGO:
         show_bridges = st.checkbox("Highlight bridges 🔎", value=(algo == GN_ALGO))
         bridge_metric = st.selectbox("Bridge metric (nodes)", [BETWEENNESS_METRIC, BRIDGING_CENTRALITY_METRIC, PARTICIPATION_METRIC],
@@ -670,7 +705,7 @@ with right:
 # -------------
 with st.spinner("Rendering 3D network…"):
     fig = make_3d_figure(
-        G, membership, show_labels=show_labels,
+        G, membership,
         highlight_nodes=bridge_nodes,
         highlight_edges=bridge_edges,
     )
@@ -682,6 +717,15 @@ with st.spinner("Rendering 3D network…"):
     st.caption(
         "Tip: If labels are cluttered, hide them and use hover tooltips. Increase min. edge weight to focus on stronger ties."
     )
+
+    # Explain what "Bridge nodes/edges" mean (shown only when GN + bridges enabled)
+    if algo == GN_ALGO and 'show_bridges' in globals() and show_bridges:
+        st.caption(
+            GN_CAPTION_FMT.format(
+                top_k_nodes=top_k_nodes,
+                metric_expl=METRIC_EXPL[bridge_metric]
+            )
+        )
 
 if show_dendro:
     with st.spinner("Clustering & rendering dendrogram…"):
