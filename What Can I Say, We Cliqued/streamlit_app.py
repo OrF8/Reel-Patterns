@@ -587,10 +587,10 @@ with st.sidebar:
                                      index=1)
         top_k_nodes = st.slider("Top bridge nodes", 1, 100, 20, 1)
     if algo == CLIQUE_PERC_ALGO:
-        cp_k = st.slider("k‑clique size (k)", 2, 10, 4)
+        cp_k = st.slider("k‑clique size (k)", 2, 10, 3, 1)
 
     top_n = st.slider("Number of actors and filmmakers (top‑N by total collaborations)", 25, 500, 200, 25)
-    min_w = st.slider("Minimum shared titles between actors and filmmakers (min. edge weight)", 1, 10, 2)
+    min_w = st.slider("Minimum shared titles between actors and filmmakers (min. edge weight)", 1, 10, 2, 1)
 
     show_labels = st.checkbox("Show names on nodes", value=False)
 
