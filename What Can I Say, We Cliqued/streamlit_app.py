@@ -270,8 +270,7 @@ def run_k_clique(graph: nx.Graph, k: int = 3) -> Tuple[Dict[str, int], List[Set[
     return memberships, comms_sorted
 
 
-def compute_bridge_metrics(graph: nx.Graph, memberships: Dict[str, int], weight: str = WEIGHT) -> Tuple[
-    pd.DataFrame, pd.DataFrame]:
+def compute_bridge_metrics(graph: nx.Graph, memberships: Dict[str, int], weight: str = WEIGHT) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Compute various bridge metrics for nodes and edges in the graph, given community memberships.
     :param graph:
@@ -430,7 +429,6 @@ def make_3d_figure(graph: nx.Graph, memberships: Union[Dict[str, int], None],
             h_ez += [z0, z1, None]
 
     if h_ex:
-        # the legend item you click
         traces.append(go.Scatter3d(
             x=h_ex, y=h_ey, z=h_ez, mode=EDGE_MODE,
             line=dict(width=4, color=HIGHLIGHT_EDGE_COLOR),
@@ -456,15 +454,15 @@ def make_3d_figure(graph: nx.Graph, memberships: Union[Dict[str, int], None],
             mode=NODE_MODE_IF_LABELS if show_labels else NODE_MODE_NO_LABELS,
             text=b_labels if show_labels else None,
             textposition=NODE_POS if show_labels else None,
-            hovertext=b_labels,  # keeps hover tooltips either way
-            hoverinfo=NODE_HOVER_INFO,  # "text"
+            hovertext=b_labels,
+            hoverinfo=NODE_HOVER_INFO,
             marker=dict(
                 size=6,
                 color=HIGHLIGHT_EDGE_COLOR,
                 line=dict(width=1.2, color=HIGHLIGHT_NODE_MARKER_COLOR)
             ),
             name="Bridge edge nodes",
-            showlegend=False,
+            showlegend=False,  # no separate legend item
             legendgroup=bridge_group
         ))
 
