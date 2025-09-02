@@ -8,6 +8,7 @@ from scipy.stats import rankdata
 
 IS_LINUX: bool = os.name == "posix"
 FIG_SIZE: Tuple[int, int] = (13, 13)
+DPI: int = 300
 PEARSON_TITLE: str = "Pearson Correlation Heatmap For Movie's\nSuccess and Their Soundtrack Popularity\n"
 PEARSON_PATH: str = "../figures/reel_hits_pearson_heatmap.png" if IS_LINUX else "..\\figures\\reel_hits_pearson_heatmap.png"
 SPEARMAN_TITLE: str = "Spearman Correlation Heatmap For Movie's\nSuccess and Their Soundtrack Popularity\n"
@@ -94,7 +95,7 @@ def create_heatmap(df: pd.DataFrame, is_pearson: bool = True) -> None:
     plt.subplots_adjust(left=0.1)
     plt.tight_layout()
 
-    plt.savefig(path)
+    plt.savefig(path, dpi=DPI)
     plt.show()
 
 
@@ -165,7 +166,8 @@ def create_scatterplot_pop_vote() -> None:
     """
     plt.figure(figsize=(10, 6))
     sns.scatterplot(x='album_popularity', y='vote_average', data=df, color='#A40000')
-    sns.regplot(x='album_popularity', y='vote_average', data=df, scatter=False, color='green', line_kws={"linewidth": 2})
+    sns.regplot(x='album_popularity', y='vote_average', data=df, scatter=False, color='green',
+                line_kws={"linewidth": 2}, ci=None)
     plt.title(SCATTER_TITLE, fontsize=18, fontweight="bold")
     plt.text(0.01, 0.98, "Corr=0.44", transform=plt.gca().transAxes,
              fontsize=16, verticalalignment='top', color='#515151')
@@ -175,7 +177,7 @@ def create_scatterplot_pop_vote() -> None:
     plt.yticks(fontsize=14)
     plt.grid(False)
     plt.tight_layout()
-    plt.savefig(SCATTER_PATH)
+    plt.savefig(SCATTER_PATH, dpi=DPI)
     plt.show()
 
 

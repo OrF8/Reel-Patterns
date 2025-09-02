@@ -417,8 +417,10 @@ def make_3d_figure(graph: nx.Graph, memberships: Union[Dict[str, int], None],
 
     traces = []
 
-    # Highlighted edges
+    # Highlighted edges + their endpoints (grouped under the same legend item)
     h_ex, h_ey, h_ez = [], [], []
+    bridge_group = "bridges"
+
     for (u, v) in highlight_edges:
         if u in graph and v in graph:
             x0, y0, z0 = pos3d[u]
@@ -426,11 +428,44 @@ def make_3d_figure(graph: nx.Graph, memberships: Union[Dict[str, int], None],
             h_ex += [x0, x1, None]
             h_ey += [y0, y1, None]
             h_ez += [z0, z1, None]
+
     if h_ex:
+        # the legend item you click
         traces.append(go.Scatter3d(
             x=h_ex, y=h_ey, z=h_ez, mode=EDGE_MODE,
             line=dict(width=4, color=HIGHLIGHT_EDGE_COLOR),
-            hoverinfo=EDGE_HOVER_INFO, showlegend=True, name="Bridge edges"
+            hoverinfo=EDGE_HOVER_INFO, showlegend=True, name="Bridge edges",
+            legendgroup=bridge_group
+        ))
+
+        # the nodes at the ends of the highlighted edges (auto-shown/hidden with the group)
+        be_nodes = set()
+        for (u, v) in highlight_edges:
+            if u in graph and v in graph:
+                be_nodes.add(u)
+                be_nodes.add(v)
+
+        bx = [pos3d[n][0] for n in be_nodes]
+        by = [pos3d[n][1] for n in be_nodes]
+        bz = [pos3d[n][2] for n in be_nodes]
+        # labels for endpoints
+        b_labels = [id_to_name.get(n, n) for n in be_nodes]
+
+        traces.append(go.Scatter3d(
+            x=bx, y=by, z=bz,
+            mode=NODE_MODE_IF_LABELS if show_labels else NODE_MODE_NO_LABELS,
+            text=b_labels if show_labels else None,
+            textposition=NODE_POS if show_labels else None,
+            hovertext=b_labels,  # keeps hover tooltips either way
+            hoverinfo=NODE_HOVER_INFO,  # "text"
+            marker=dict(
+                size=6,
+                color=HIGHLIGHT_EDGE_COLOR,
+                line=dict(width=1.2, color=HIGHLIGHT_NODE_MARKER_COLOR)
+            ),
+            name="Bridge edge nodes",
+            showlegend=False,
+            legendgroup=bridge_group
         ))
 
     n_comm: int = 0
