@@ -5,9 +5,8 @@ import pandas as pd
 from spotipy.oauth2 import SpotifyClientCredentials
 from rapidfuzz import fuzz
 from dotenv import load_dotenv
+from tqdm import tqdm
 from typing import Union, List, Tuple, Any, Dict, Set, Optional
-
-from organize_data import df_reel_hits
 
 # Load environment variables from .env file (API keys)
 load_dotenv()
@@ -21,11 +20,14 @@ sp: spotipy.Spotify = spotipy.Spotify(client_credentials_manager=cred_manager,
 # Constants
 SOUNDTRACK_HINTS: Tuple[str, str, str, str, str] = (
     "soundtrack", "original motion picture", "music from the motion picture", "original score", "ost"
+    # ost stands for Original Soundtrack
 )
-CLEAN_TMDB: pd.DataFrame = pd.read_csv("..\\data\\clean_tmdb.csv")
-BIG_REEL_HITS_PATH: str = "..\\data\\reel_hits_big.csv"
-SMALL_REEL_HITS_PATH: str = "..\\data\\reel_hits_small.csv"
-REEL_HITS_PATH: str = "..\\data\\reel_hits.csv"
+IS_LINUX: bool = os.name == "posix"
+TMDB_PATH: str = "../data/clean_tmdb.csv" if IS_LINUX else "..\\data\\clean_tmdb.csv"
+CLEAN_TMDB: pd.DataFrame = pd.read_csv(TMDB_PATH)
+BIG_REEL_HITS_PATH: str = "../data/reel_hits_big.csv" if IS_LINUX else "..\\data\\reel_hits_big.csv"
+SMALL_REEL_HITS_PATH: str = "../data/reel_hits_small.csv" if IS_LINUX else "..\\data\\reel_hits_small.csv"
+REEL_HITS_PATH: str = "../data/reel_hits.csv" if IS_LINUX else "..\\data\\reel_hits.csv"
 IMDB_ID_COL: str = "tconst"
 MOVIE_TITLE_COL: str = "title"
 MOVIE_YEAR_COL: str = "year"
@@ -102,7 +104,7 @@ def heuristic_score(album, movie_title, movie_year) -> float:
     :return: A float score indicating the quality of the match (0-127).
     """
     name = album.get(NAME_METRIC, '')
-    # Title similarity (robust to parentheses)
+    # Title similarity
     title_sim: float = fuzz.token_set_ratio(movie_title, name)
     # Hints
     hint_bonus: int = 15 if any(h in name.lower() for h in SOUNDTRACK_HINTS) else 0
@@ -111,6 +113,7 @@ def heuristic_score(album, movie_title, movie_year) -> float:
     year_bonus: int = 0
     if movie_year and album_year:
         diff: int = abs(album_year - movie_year)
+        # Bonuses for year proximity - exact year match gets highest bonus
         year_bonus = 12 if diff <= 1 else 6 if diff == 2 else 0
     return title_sim + hint_bonus + year_bonus
 
@@ -124,15 +127,17 @@ def find_best_soundtrack_album(title, year) -> Tuple[Union[Dict[str, Any], None]
     """
     tried: Set[str] = set()
     best, best_score = None, -1
-
+    # Generate candidate queries and search Spotify
     for q_title in [title]:
         for q in candidate_queries(q_title, year):
-            if q in tried: continue
+            if q in tried:
+                continue
             tried.add(q)
             res = sp.search(q=q, type='album', limit=10)
+            # Evaluate each album in the search results
             for alb in res.get('albums', {}).get(ITEMS_METRIC, []):
                 score: float = heuristic_score(alb, title, year)
-                if score > best_score:
+                if score > best_score:  # Keep the album with the highest score
                     best, best_score = alb, score
     return best, best_score
 
@@ -169,6 +174,8 @@ def get_album_popularity_metrics(album_id: str) -> Dict[str, Any]:
     for i in range(0, len(ids), BATCH_SIZE):
         batch = sp.tracks(ids[i:i+BATCH_SIZE]).get("tracks", [])
         pop_list.extend([t.get(POPULARITY_METRIC) for t in batch if t and t.get(POPULARITY_METRIC) is not None])
+
+    # Calculate average and sum of track popularity
     if pop_list:
         avg_track_pop = sum(pop_list) / len(pop_list)
         sum_track_pop = sum(pop_list)
@@ -196,12 +203,15 @@ def process_movie(tconst: str, title: str, year: int, revenue: float) -> Dict[st
     :param revenue: The revenue of the movie.
     :return: A dictionary with movie and soundtrack album data.
     """
+    # First, find the best matching soundtrack album
     album, score = find_best_soundtrack_album(title, year)
     if not album:
         return {IMDB_ID_COL: tconst, MOVIE_TITLE_COL: title, MOVIE_YEAR_COL: year,
                 MOVIE_REVENUE_COL: revenue, SPOTIFY_ALBUM_ID_COL: None, MATCH_SCORE_COL: None}
 
+    # Then, gather album popularity metrics
     metrics = get_album_popularity_metrics(album[ID_METRIC])
+
     return {
         IMDB_ID_COL: tconst,
         MOVIE_TITLE_COL: title,
@@ -247,12 +257,14 @@ def filter_dataset(df: pd.DataFrame, vote_avg_predicate) -> pd.DataFrame:
 def gather_results(df: pd.DataFrame) -> pd.DataFrame:
     """
     Gather results by processing each movie in the DataFrame.
+    Gathers the first 500 entries for processing.
+    NOTE: This function may take a while due to API calls.
+    NOTE: This function may not be accurate due to heuristic matching.
     :param df: The DataFrame that contains movie data.
     :return: A DataFrame with processed movie and soundtrack data.
     """
     results: List[Dict[str, Any]] = []
     tuples: List[Tuple[Any, ...]] = list(df.itertuples(index=False))
-    from tqdm import tqdm
     for row in tqdm(tuples[:500]):
         tconst: str = row.imdb_id
         title: str = row.title
