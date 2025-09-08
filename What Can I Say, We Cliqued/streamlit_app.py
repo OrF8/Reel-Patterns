@@ -82,9 +82,9 @@ GN_CAPTION_FMT: str = f"""
 **Bridge edges**: Inter-community edges with the highest edge betweenness (top-{{top_k_nodes}}).\n
 *Note:* When you isolate a single community via the legend, inter-community bridge edges are hidden.
 """
-IS_LINUX: bool = os.name == "posix"
+DATA_DIR_PATH: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
 # Note: The streamlit app is ran from the root directory, so paths are relative to that
-DATA_PATH: str = "data/collabs.csv" if IS_LINUX else "data\\collabs.csv"
+DATA_PATH: str  = os.path.join(DATA_DIR_PATH, "collabs.csv")
 DENDROGRAM_TITLE_FMT: str = f"Dendrogram Hierarchy (linkage = {{linkage_method}})"
 BROWSE_COMM_OPTIONS_MULT_FMT: str = f"#{{i}} – {{size}} actors & filmmakers"
 BROWSE_COMM_OPTIONS_SINGLE_FMT: str = f"#{{i}} – 1 actor or filmmaker"

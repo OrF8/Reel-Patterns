@@ -22,12 +22,12 @@ SOUNDTRACK_HINTS: Tuple[str, str, str, str, str] = (
     "soundtrack", "original motion picture", "music from the motion picture", "original score", "ost"
     # ost stands for Original Soundtrack
 )
-IS_LINUX: bool = os.name == "posix"
-TMDB_PATH: str = "../data/clean_tmdb.csv" if IS_LINUX else "..\\data\\clean_tmdb.csv"
+DATA_PATH: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
+TMDB_PATH: str = os.path.join(DATA_PATH, "clean_tmdb.csv")
 CLEAN_TMDB: pd.DataFrame = pd.read_csv(TMDB_PATH)
-BIG_REEL_HITS_PATH: str = "../data/reel_hits_big.csv" if IS_LINUX else "..\\data\\reel_hits_big.csv"
-SMALL_REEL_HITS_PATH: str = "../data/reel_hits_small.csv" if IS_LINUX else "..\\data\\reel_hits_small.csv"
-REEL_HITS_PATH: str = "../data/reel_hits.csv" if IS_LINUX else "..\\data\\reel_hits.csv"
+BIG_REEL_HITS_PATH: str = os.path.join(DATA_PATH, "reel_hits_big.csv")
+SMALL_REEL_HITS_PATH: str = os.path.join(DATA_PATH, "reel_hits_small.csv")
+REEL_HITS_PATH: str = os.path.join(DATA_PATH, "reel_hits.csv")
 IMDB_ID_COL: str = "tconst"
 MOVIE_TITLE_COL: str = "title"
 MOVIE_YEAR_COL: str = "year"

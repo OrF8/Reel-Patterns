@@ -6,18 +6,19 @@ import matplotlib.pyplot as plt
 from typing import Tuple, List
 from scipy.stats import rankdata
 
-IS_LINUX: bool = os.name == "posix"
+FIGURE_OUT_PATH_DIRECTORY: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "figures"))
 FIG_SIZE: Tuple[int, int] = (13, 13)
 DPI: int = 300
 PEARSON_TITLE: str = "Pearson Correlation Heatmap For Movie's\nSuccess and Their Soundtrack Popularity\n"
-PEARSON_PATH: str = "../figures/reel_hits_pearson_heatmap.png" if IS_LINUX else "..\\figures\\reel_hits_pearson_heatmap.png"
+PEARSON_PATH: str = os.path.join(FIGURE_OUT_PATH_DIRECTORY, "reel_hits_pearson_heatmap.png")
 SPEARMAN_TITLE: str = "Spearman Correlation Heatmap For Movie's\nSuccess and Their Soundtrack Popularity\n"
-SPEARMAN_PATH: str = "../figures/reel_hits_spearman_heatmap.png" if IS_LINUX else "..\\figures\\reel_hits_spearman_heatmap.png"
+SPEARMAN_PATH: str = os.path.join(FIGURE_OUT_PATH_DIRECTORY, "reel_hits_spearman_heatmap.png")
 CORRELATION_LABEL_FMT: str = f"{{corr}} Correlation"
 SCATTER_TITLE: str = "Correlation Between Soundtrack Popularity and Average Rating"
-SCATTER_PATH: str = "../figures/corr_pop_rating.png" if IS_LINUX else "..\\figures\\corr_pop_rating.png"
-SOUND_PATH: str = "../data/reel_hits.csv"if IS_LINUX else "..\\data\\reel_hits.csv"
-MOVIE_PATH: str = "../data/clean_tmdb.csv" if IS_LINUX else "..\\data\\clean_tmdb.csv"
+SCATTER_PATH: str = os.path.join(FIGURE_OUT_PATH_DIRECTORY, "corr_pop_rating.png")
+DATA_DIR_PATH: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
+SOUND_PATH: str = os.path.join(DATA_DIR_PATH, "reel_hits.csv")
+MOVIE_PATH: str = os.path.join(DATA_DIR_PATH, "clean_tmdb.csv")
 
 # Load dataset
 sound_df: pd.DataFrame = pd.read_csv(SOUND_PATH).rename(columns={"tconst": "imdb_id"})

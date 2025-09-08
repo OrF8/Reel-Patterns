@@ -1,13 +1,13 @@
 import os
 import pandas as pd
 
-IS_LINUX: bool = os.name == 'posix'
-NAME_BASICS_PATH: str = "../data/name.basics.tsv" if IS_LINUX else "..\\data\\name.basics.tsv"
-TITLE_BASICS_PATH: str = "../data/title.basics.tsv" if IS_LINUX else "..\\data\\title.basics.tsv"
-AKAS_PATH:str = "../data/title.akas.tsv" if IS_LINUX else "..\\data\\title.akas.tsv"
-PRINCIPALS_PATH:str = "../data/title.principals.tsv" if IS_LINUX else "..\\data\\title.principals.tsv"
-RATINGS_PATH:str = "../data/title.ratings.tsv" if IS_LINUX else "..\\data\\title.ratings.tsv"
-COLLABS_PATH: str = "../data/collabs.csv" if IS_LINUX else "..\\data\\collabs.csv"
+DATA_DIR_PATH: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
+NAME_BASICS_PATH: str = os.path.join(DATA_DIR_PATH, "name.basics.tsv")
+TITLE_BASICS_PATH: str = os.path.join(DATA_DIR_PATH, "title.basics.tsv")
+AKAS_PATH: str = os.path.join(DATA_DIR_PATH, "title.akas.tsv")
+PRINCIPALS_PATH: str = os.path.join(DATA_DIR_PATH, "title.principals.tsv")
+RATINGS_PATH: str = os.path.join(DATA_DIR_PATH, "title.ratings.tsv")
+COLLABS_PATH: str = os.path.join(DATA_DIR_PATH, "collabs.csv")
 TSV_SEP: str = "\t"
 ACTOR_NAME_ID_COL: str = "nconst"
 ACTOR_NAME_COL: str = "primaryName"
