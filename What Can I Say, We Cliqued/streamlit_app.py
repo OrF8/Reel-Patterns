@@ -9,7 +9,6 @@
 # ========================================================================
 
 import itertools
-import os
 import networkx as nx
 import numpy as np
 import pandas as pd
@@ -21,10 +20,9 @@ from networkx.algorithms.community.quality import modularity
 from typing import List, Tuple, Dict, Set, Union
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
+from constants import COLLABS_PATH, MOVIE_ID_COL, ACTOR_NAME_ID_COL
 
-MOVIE_TITLE_COL: str = "tconst"
 ACTOR_NAME_COL: str = "name"
-ACTOR_NAME_ID_COL: str = "nconst"
 WEIGHT: str = "weight"
 DEFAULT_SEED: int = 42
 MIN_MARKER: int = 8
@@ -84,9 +82,8 @@ GN_CAPTION_FMT: str = f"""
 **Bridge edges**: Inter-community edges with the highest edge betweenness (top-{{top_k_nodes}}).\n
 *Note:* When you isolate a single community via the legend, inter-community bridge edges are hidden.
 """
-DATA_DIR_PATH: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
 # Note: The streamlit app is ran from the root directory, so paths are relative to that
-DATA_PATH: str  = os.path.join(DATA_DIR_PATH, "collabs.csv")
+DATA_PATH: str  = COLLABS_PATH
 DENDROGRAM_TITLE_FMT: str = f"Dendrogram Hierarchy (linkage = {{linkage_method}})"
 BROWSE_COMM_OPTIONS_MULT_FMT: str = f"#{{i}} – {{size}} actors & filmmakers"
 BROWSE_COMM_OPTIONS_SINGLE_FMT: str = f"#{{i}} – 1 actor or filmmaker"
@@ -112,7 +109,7 @@ def load_data() -> pd.DataFrame:
     :return: The actor & filmmakers collaboration DataFrame.
     """
     # Load only necessary columns as strings
-    return pd.read_csv(DATA_PATH, dtype=str, usecols=[MOVIE_TITLE_COL, ACTOR_NAME_COL, ACTOR_NAME_ID_COL])
+    return pd.read_csv(DATA_PATH, dtype=str, usecols=[MOVIE_ID_COL, ACTOR_NAME_COL, ACTOR_NAME_ID_COL])
 
 
 @st.cache_data(show_spinner=False)
@@ -136,7 +133,7 @@ def build_graph(pairs: pd.DataFrame, min_edge_weight: int = 1) -> nx.Graph:
     :return: A graph where nodes are actors/filmmakers and edges represent co-appearances.
     """
     # Group actors by title
-    actors_by_title = pairs.groupby(MOVIE_TITLE_COL)[ACTOR_NAME_ID_COL].apply(list).to_dict()
+    actors_by_title = pairs.groupby(MOVIE_ID_COL)[ACTOR_NAME_ID_COL].apply(list).to_dict()
     edge_weights = Counter()
     for cast in actors_by_title.values():
         # unique actors within a title to avoid double counting

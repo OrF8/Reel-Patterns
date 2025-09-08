@@ -10,19 +10,16 @@
 
 import os
 import pandas as pd
+from constants import DATA_DIR_PATH, COLLABS_PATH, MOVIE_ID_COL, ACTOR_NAME_ID_COL
 
-DATA_DIR_PATH: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
 NAME_BASICS_PATH: str = os.path.join(DATA_DIR_PATH, "name.basics.tsv")
 TITLE_BASICS_PATH: str = os.path.join(DATA_DIR_PATH, "title.basics.tsv")
 AKAS_PATH: str = os.path.join(DATA_DIR_PATH, "title.akas.tsv")
 PRINCIPALS_PATH: str = os.path.join(DATA_DIR_PATH, "title.principals.tsv")
 RATINGS_PATH: str = os.path.join(DATA_DIR_PATH, "title.ratings.tsv")
-COLLABS_PATH: str = os.path.join(DATA_DIR_PATH, "collabs.csv")
 TSV_SEP: str = "\t"
-ACTOR_NAME_ID_COL: str = "nconst"
 ACTOR_NAME_COL: str = "primaryName"
 PROFESSION_COL: str = "primaryProfession"
-MOVIE_ID_COL: str  = "tconst"
 MOVIE_TITLE_COL: str = "primaryTitle"
 MOVIE_YEAR_COL: str = "startYear"
 MOVIE_TYPE_COL: str = "titleType"
