@@ -1,3 +1,13 @@
+# ========================================================================
+# Reel Patterns: What can I say, We cliqued - Data organization script
+#
+# Requirements:
+#   pip install -r requirements.txt
+#
+# Usage:
+#   python organize_data.py
+# ========================================================================
+
 import os
 import pandas as pd
 
@@ -23,6 +33,9 @@ ACTOR_PROFESSION: str = "actor"
 ACTRESS_PROFESSION: str = "actress"
 DIRECTOR_PROFESSION: str = "director"
 NUM_VOTES_COL: str = "numVotes"
+MIN_YEAR: int = 1990
+MIN_NUM_VOTES: int = 1000
+MIN_RATING: float = 7.0
 
 def create_best_collabs() -> None:
     """
@@ -43,9 +56,9 @@ def create_best_collabs() -> None:
                                 usecols=[MOVIE_ID_COL, MOVIE_TITLE_COL, MOVIE_YEAR_COL, MOVIE_TYPE_COL], dtype=str)
     # Filter for movies only
     titles_basics = titles_basics[titles_basics[MOVIE_TYPE_COL] == "movie"]
-    # Filter for titles that have a start year and are from 1990 onwards
+    # Filter for titles that have a start year and are from MIN_YEAR onwards
     titles_basics = titles_basics[titles_basics[MOVIE_YEAR_COL].str.isnumeric()]
-    titles_basics = titles_basics[titles_basics[MOVIE_YEAR_COL].astype(int) >= 1990]
+    titles_basics = titles_basics[titles_basics[MOVIE_YEAR_COL].astype(int) >= MIN_YEAR]
     titles_basics = titles_basics[titles_basics[MOVIE_TITLE_COL].notna()]
 
     # Save primaryTitle for convenience
@@ -78,9 +91,9 @@ def create_best_collabs() -> None:
     ratings = pd.read_csv(RATINGS_PATH, sep=TSV_SEP, dtype=str)
     # Filter out titles with a small amount of ratings
     ratings = ratings[ratings[NUM_VOTES_COL].str.isnumeric()]
-    ratings = ratings[ratings[NUM_VOTES_COL].astype(int) > 1000]
-    # Filter out titles with a rating below 7.0
-    ratings = ratings[ratings['averageRating'].astype(float) >= 7.0]
+    ratings = ratings[ratings[NUM_VOTES_COL].astype(int) > MIN_NUM_VOTES]
+    # Filter out titles with a rating below MIN_RATING
+    ratings = ratings[ratings['averageRating'].astype(float) >= MIN_RATING]
     ratings = ratings[[MOVIE_ID_COL]]
 
     print("Successfully loaded ratings with shape:", ratings.shape)

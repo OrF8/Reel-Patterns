@@ -1,3 +1,13 @@
+# ========================================================================
+# Reel Patterns: Reel Hits Meet Real Hits - Data Visualization
+#
+# Requirements:
+#   pip install -r requirements.txt
+#
+# Usage:
+#   python reel_hits_viz.py
+# ========================================================================
+
 import os
 import pandas as pd
 import seaborn as sns

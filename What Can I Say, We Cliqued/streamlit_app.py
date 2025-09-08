@@ -1,10 +1,12 @@
-# Reel Patterns: What can I say, We cliqued
+# ========================================================================
+# Reel Patterns: What can I say, We cliqued - visualization app
 #
-# Requirements
+# Requirements:
 #   pip install -r requirements.txt
 #
-# Run
+# Usage:
 #   python -m streamlit run "What Can I Say, We Cliqued\streamlit_app.py"
+# ========================================================================
 
 import itertools
 import os

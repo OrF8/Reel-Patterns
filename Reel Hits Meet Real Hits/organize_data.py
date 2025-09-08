@@ -1,3 +1,13 @@
+# ========================================================================
+# Reel Patterns: Reel Hits Meet Real Hits - Data organization and collection script
+#
+# Requirements:
+#   pip install -r requirements.txt
+#
+# Usage:
+#   python organize_data.py
+# ========================================================================
+
 import datetime
 import spotipy
 import os
