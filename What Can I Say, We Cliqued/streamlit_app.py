@@ -109,7 +109,7 @@ def load_data() -> pd.DataFrame:
     Loads with caching for faster cold starts.
     :return: The actor & filmmakers collaboration DataFrame.
     """
-    df = pd.read_csv("collabs.csv", nrows=0)  # just read headers
+    df = pd.read_csv("data\collabs.csv", nrows=0)  # just read headers
     print("Columns in CSV:", df.columns.tolist())
     # Load only necessary columns as strings
     return pd.read_csv(DATA_PATH, dtype=str, usecols=[MOVIE_ID_COL, ACTOR_NAME_COL, ACTOR_NAME_ID_COL])
