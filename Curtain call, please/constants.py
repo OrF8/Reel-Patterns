@@ -1,16 +1,11 @@
-from typing import Literal
-from typing import Dict
 import os
+from typing import Dict, List, Literal
 
 # Data path
-DATA_PATH: str = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "data")
-)
-ROTTEN_TOMATOES_PATH: str = os.path.join(DATA_PATH, "rotten_tomatoes_movies.csv")
-WIKIDATA_PATH: str = os.path.join(
-    DATA_PATH, "wikidata_movies.csv"
-)
-IMDB_PATH: str = os.path.join(DATA_PATH, "clean_tmdb.csv")
+DATA_DIR_PATH: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
+ROTTEN_TOMATOES_PATH: str = os.path.join(DATA_DIR_PATH, "rotten_tomatoes_movies.csv")
+WIKIDATA_PATH: str = os.path.join(DATA_DIR_PATH, "wikidata_movies.csv")
+IMDB_PATH: str = os.path.join(DATA_DIR_PATH, "clean_tmdb.csv")
 
 # Wikidata columns
 FRANCHISE_ID: str = "franchise_qid"
@@ -40,7 +35,7 @@ ROI: str = "roi"
 N_FILMS_IN_GROUP: str = "n_films_in_group"
 INDEX_IN_GROUP: str = "index_in_group"
 
-BAD_SERIES_LABELS: list[str] = [
+BAD_SERIES_LABELS: List[str] = [
     "Walt Disney Animation Studios film",
     "BBC's 100 Greatest Films of the 21st Century",
     "DreamWorks Animation feature films",
@@ -48,12 +43,11 @@ BAD_SERIES_LABELS: list[str] = [
     "Studio Ghibli Feature Films",
     "list of Pixar films",
     "list of Illumination films",
-    "MonsterVerse",
+    "MonsterVerse"
 ]
 
 REMOVE_FRANCHISE: int = 1
 REMOVE_SERIES: int = 2
-
 
 CRITIC_RATING: str = "tomatometer_rating"
 AUDIENCE_RATING: str = "audience_rating"
@@ -68,28 +62,19 @@ BAYESIAN_SHRUNKEN_PROB_OF_SUCCESS: str = "bayesian_shrunken_prob_of_success"
 CI_LOWER: str = "ci_lower"
 CI_UPPER: str = "ci_upper"
 Metric = Literal[AUDIENCE_RATING, CRITIC_RATING, ROI]
-BASE_TITLE: str = (
-    "Probability of a Sequel to Be as Successful as the Best So Far\nIn Terms of {}"
-)
+BASE_TITLE: str = "Probability of a Sequel to Be as Successful as the Best So Far\nIn Terms of {}"
 TITLE_MAP: Dict[str, str] = {
     AUDIENCE_RATING: BASE_TITLE.format("Audience Rating"),
     CRITIC_RATING: BASE_TITLE.format("Critic Rating"),
-    ROI: BASE_TITLE.format("Return on Investment (ROI) - Revenue / Budget"),
+    ROI: BASE_TITLE.format("Return on Investment (ROI) - Revenue / Budget")
 }
-FIGURE_OUT_PATH_DIRECTORY: str = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "figures")
-)
-MOVIES_PER_SEQUEL_FIGURE_OUT_PATH: str = os.path.join(
-    FIGURE_OUT_PATH_DIRECTORY, "movies_per_sequel_index.png"
-)
+FIGURE_OUT_PATH_DIRECTORY: str = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "figures"))
+MOVIES_PER_SEQUEL_FIGURE_OUT_PATH: str = os.path.join(FIGURE_OUT_PATH_DIRECTORY, "movies_per_sequel_index.png")
 PROBABILITY_OF_SUCCESS_FIGURE_OUT_PATH_MAP: Dict[str, str] = {
-    AUDIENCE_RATING: os.path.join(
-        FIGURE_OUT_PATH_DIRECTORY, "prob_of_success_audience_rating.png"
-    ),
-    CRITIC_RATING: os.path.join(
-        FIGURE_OUT_PATH_DIRECTORY, "prob_of_success_critic_rating.png"
-    ),
-    ROI: os.path.join(FIGURE_OUT_PATH_DIRECTORY, "prob_of_success_roi.png"),
+    AUDIENCE_RATING: os.path.join(FIGURE_OUT_PATH_DIRECTORY, "prob_of_success_audience_rating.png"    ),
+    CRITIC_RATING: os.path.join(FIGURE_OUT_PATH_DIRECTORY, "prob_of_success_critic_rating.png"    ),
+    ROI: os.path.join(FIGURE_OUT_PATH_DIRECTORY, "prob_of_success_roi.png")
 }
 DPI: int = 300
 MAIN_COLOR: str = "#A40000"
+CI_COLOR: str = "#FF5B5B"

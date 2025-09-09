@@ -1,53 +1,81 @@
-# wikidata_franchise_from_rt.py
-# ------------------------------------------------------------
-# Map Rotten Tomatoes IDs (P1258) -> Wikidata film item -> series (P179) & franchise (P8345)
-# + Money fields: budget (P2130, fallback P2769), box office (P2142) with currency/qualifiers
-# + External IDs: Box Office Mojo film ID (P1237), IMDb ID (P345), TMDb movie ID (P4947)
-# (Derived columns removed; only raw Wikidata fields kept.)
-# Usage (at bottom): df_enriched = attach_wikidata_franchise_ids(df, "rotten_tomatoes_link", id_mode="both")
+# ===============================================================
+# Reel Patterns: Curtain Call, Please - Collecting Franchise Data
 #
-# Requires: pandas, requests
-# ------------------------------------------------------------
+# Requirements:
+#   pip install -r requirements.txt
+#
+# Usage:
+#   python query_wikidata_script.py
+# ===============================================================
 
-from __future__ import annotations
 import time
-import math
-from typing import Dict, List, Tuple, Iterable, Optional
 import requests
-import pandas as pd
 import os
+import pandas as pd
+from typing import Dict, List, Tuple, Iterable, Optional, Any
+from constants import DATA_DIR_PATH, ROTTEN_TOMATOES_ID
+
+WD_ENDPOINT: str = "https://query.wikidata.org/sparql"
+DEFAULT_USER_AGENT: str = "FranchiseMapper/1.0 (adirtuval@gmail.com)"
+RT_MOVIES_DF: pd.DataFrame = pd.read_csv(os.path.join(DATA_DIR_PATH, "rotten_tomatoes_movies.csv"))
+OUT_PATH: str = os.path.join(DATA_DIR_PATH, "wikidata_movies.csv")
+ROTTEN_ID_COL: str = "rt_id"
+WD_FILM_QID_COL: str = "wd_film_qid"  # 'WD' stands for Wikidata
+WD_FILM_LABEL_COL: str = "wd_film_label"
+SERIES_QID_COL: str = "series_qid"
+SERIES_LABEL_COL: str = "series_label"
+FRANCHISE_QID_COL: str = "franchise_qid"
+FRANCHISE_LABEL_COL: str = "franchise_label"
+BOM_FILM_ID_COL: str = "bom_film_id"  # 'BOM' stands for Box Office Mojo
+IMDB_ID_COL: str ="imdb_id"
+TMDB_ID_COL: str = "tmdb_id"
+BUDGET_VALUE_COL: str  = "budget_value"
+BUDGET_CUR_ID_COL: str = "budget_currency_qid"
+BUDGET_CUR_COL: str = "budget_currency"
+BUDGET_ASOF_COL: str = "budget_asof"
+BUDGET_SOURCE_COL: str = "budget_source"
+BO_VAL_COL: str = "box_office_value"  # 'BO' stands for Box Office, not Body Odor :)
+BO_CUR_ID_COL: str = "box_office_currency_qid"
+BO_CUR_COL: str = "box_office_currency"
+BO_ASOF_COL: str = "box_office_asof"
+BO_REGION_ID_COL: str = "box_office_region_qid"
+BO_REGION_COL: str = "box_office_region"
+FORWARD_SLASH: str = "/"
+UNDERSCORE: str = "_"
+HYPHEN: str = "-"
+
+def escape_literal(string: str) -> str:
+    """
+    Escape a string for SPARQL string literal.
+    :param string: input string.
+    :return: escaped string.
+    """
+    return string.replace("\\", "\\\\").replace('"', '\\"')
 
 
-WD_ENDPOINT = "https://query.wikidata.org/sparql"
-
-# IMPORTANT: replace with your app/contact so WDQS is happy.
-DEFAULT_USER_AGENT = "FranchiseMapper/1.0 (adirtuval@gmail.com)"
-
-
-def _escape_literal(s: str) -> str:
-    """Escape a string for SPARQL string literal."""
-    return s.replace("\\", "\\\\").replace('"', '\\"')
-
-
-def _build_values_pairs(pairs: List[Tuple[str, str]]) -> str:
+def build_values_pairs(pairs: List[Tuple[str, str]]) -> str:
     """
     Build a VALUES block mapping variant -> original:
         VALUES (?rtid ?orig) { ("variant1" "original1") ("variant2" "original1") ... }
+    :param pairs: list of (variant, original) tuples.
+    :return: SPARQL VALUES block content.
     """
     rows = []
     for rtid, orig in pairs:
-        rows.append(f'("{_escape_literal(rtid)}" "{_escape_literal(orig)}")')
+        rows.append(f'("{escape_literal(rtid)}" "{escape_literal(orig)}")')
     return " ".join(rows)
 
 
-def _sparql_for_pairs(pairs: List[Tuple[str, str]]) -> str:
+def sparql_for_pairs(pairs: List[Tuple[str, str]]) -> str:
     """
     SPARQL: match films by Rotten Tomatoes ID (P1258), return film, series (P179), franchise (P8345),
     money fields (budget P2130/P2769, box office P2142), and external IDs (BOM/IMDb/TMDb).
     For quantities, return amount & unit IRI, and qualifiers when present (P585 as-of, P1001 region).
     ?orig carries the original RT id to map results back to your rows.
+    :param pairs: list of (variant, original) RT id tuples.
+    :return: SPARQL query string.
     """
-    values_block = _build_values_pairs(pairs)
+    values_block = build_values_pairs(pairs)
     return f"""
 SELECT ?orig ?film ?filmLabel ?series ?seriesLabel ?franchise ?franchiseLabel
 
@@ -129,13 +157,16 @@ WHERE {{
 """.strip()
 
 
-def _post_sparql(query: str,
-                 *,
-                 user_agent: str = DEFAULT_USER_AGENT,
-                 max_retries: int = 5,
-                 base_sleep: float = 1.5) -> dict:
+def post_sparql(query: str, *, user_agent: str = DEFAULT_USER_AGENT,
+                max_retries: int = 5, base_sleep: float = 1.5) -> Dict[str, Any]:
     """
     POST a SPARQL query with basic retry/backoff on 429/5xx.
+    :param query: SPARQL query string.
+    :param user_agent: User-Agent header value.
+    :param max_retries: max attempts on 429/5xx.
+    :param base_sleep: base sleep time in seconds for backoff.
+    :return: parsed JSON response.
+    :raises: RuntimeError on repeated 429/5xx or other HTTP errors.
     """
     headers = {
         "Accept": "application/sparql-results+json",
@@ -157,8 +188,13 @@ def _post_sparql(query: str,
     raise RuntimeError(f"WDQS rate-limited or unavailable after {max_retries} attempts.")
 
 
-def _parse_bindings_to_df(js: dict) -> pd.DataFrame:
-    """Convert WDQS JSON results to a tidy DataFrame keyed by original RT id (?orig)."""
+def parse_bindings_to_df(js: Dict[str, Any]) -> pd.DataFrame:
+    """
+    Convert WDQS JSON results to a tidy DataFrame keyed by original RT id (?orig).
+    Handles coalescing of budget/box office qualifiers from multiple ranks/properties.
+    :param js: parsed JSON from WDQS.
+    :return: DataFrame with one row per original RT id.
+    """
     rows = []
     for b in js.get("results", {}).get("bindings", []):
         def get(name: str) -> Optional[str]:
@@ -166,7 +202,7 @@ def _parse_bindings_to_df(js: dict) -> pd.DataFrame:
             return v if v is not None and v != "" else None
 
         def last_qid(iri: Optional[str]) -> Optional[str]:
-            return iri.split("/")[-1] if iri else None
+            return iri.split(FORWARD_SLASH)[-1] if iri else None
 
         # Coalesce budget amount/unit/asof with preference: P2130 preferred -> P2130 any -> P2769
         budget_amount = (
@@ -198,49 +234,59 @@ def _parse_bindings_to_df(js: dict) -> pd.DataFrame:
         box_region_label = get("box_region_prefLabel") or get("box_region_anyLabel")
 
         rows.append({
-            "rt_id": get("orig"),
-            "wd_film_qid": last_qid(get("film")),
-            "wd_film_label": get("filmLabel"),
-            "series_qid": last_qid(get("series")),
-            "series_label": get("seriesLabel"),
-            "franchise_qid": last_qid(get("franchise")),
-            "franchise_label": get("franchiseLabel"),
+            ROTTEN_ID_COL: get("orig"),
+            WD_FILM_QID_COL: last_qid(get("film")),
+            WD_FILM_LABEL_COL: get("filmLabel"),
+            SERIES_QID_COL: last_qid(get("series")),
+            SERIES_LABEL_COL: get("seriesLabel"),
+            FRANCHISE_QID_COL: last_qid(get("franchise")),
+            FRANCHISE_LABEL_COL: get("franchiseLabel"),
 
             # ---- External IDs ----
-            "bom_film_id": get("bom_id"),
-            "imdb_id": get("imdb_id"),
-            "tmdb_id": get("tmdb_id"),
+            BOM_FILM_ID_COL: get("bom_id"),
+            IMDB_ID_COL: get("imdb_id"),
+            TMDB_ID_COL: get("tmdb_id"),
 
             # ---- Money fields (raw) ----
-            "budget_value": float(budget_amount) if budget_amount is not None else None,
-            "budget_currency_qid": last_qid(budget_unit_iri),
-            "budget_currency": None,  # unit label not returned directly here
-            "budget_asof": budget_asof,
-            "budget_source": budget_source,  # "P2130" or "P2769"
+            BUDGET_VALUE_COL: float(budget_amount) if budget_amount is not None else None,
+            BUDGET_CUR_ID_COL: last_qid(budget_unit_iri),
+            BUDGET_CUR_COL: None,  # unit label not returned directly here
+            BUDGET_ASOF_COL: budget_asof,
+            BUDGET_SOURCE_COL: budget_source,  # "P2130" or "P2769"
 
-            "box_office_value": float(box_amount) if box_amount is not None else None,
-            "box_office_currency_qid": last_qid(box_unit_iri),
-            "box_office_currency": None,  # unit label not returned directly here
-            "box_office_asof": box_asof,
-            "box_office_region_qid": last_qid(box_region_iri),
-            "box_office_region": box_region_label,
+            BO_VAL_COL: float(box_amount) if box_amount is not None else None,
+            BO_CUR_ID_COL: last_qid(box_unit_iri),
+            BO_CUR_COL: None,  # unit label not returned directly here
+            BO_ASOF_COL: box_asof,
+            BO_REGION_ID_COL: last_qid(box_region_iri),
+            BO_REGION_COL: box_region_label,
         })
     if not rows:
         return pd.DataFrame(columns=[
-            "rt_id", "wd_film_qid", "wd_film_label",
-            "series_qid", "series_label",
-            "franchise_qid", "franchise_label",
-            "bom_film_id", "imdb_id", "tmdb_id",
-            "budget_value", "budget_currency_qid", "budget_currency", "budget_asof", "budget_source",
-            "box_office_value", "box_office_currency_qid", "box_office_currency", "box_office_asof",
-            "box_office_region_qid", "box_office_region"
+            ROTTEN_ID_COL, WD_FILM_QID_COL, WD_FILM_LABEL_COL,
+            SERIES_QID_COL, SERIES_LABEL_COL,
+            FRANCHISE_QID_COL, FRANCHISE_LABEL_COL,
+            BOM_FILM_ID_COL, IMDB_ID_COL, TMDB_ID_COL,
+            BUDGET_VALUE_COL, BUDGET_CUR_ID_COL, BUDGET_CUR_COL, BUDGET_ASOF_COL, BUDGET_SOURCE_COL,
+            BO_VAL_COL, BO_CUR_ID_COL, BO_CUR_COL, BO_ASOF_COL,
+            BO_REGION_ID_COL, BO_REGION_COL
         ])
-    # There should be at most one film per rt_id; if duplicates appear, keep the first.
-    df = pd.DataFrame(rows).drop_duplicates(subset=["rt_id"])
+    # There should be at most one film per rt_id. Therefore, if duplicates appear, keep the first.
+    df = pd.DataFrame(rows).drop_duplicates(subset=[ROTTEN_ID_COL])
     return df
 
 
-def _chunked(iterable: Iterable, size: int) -> Iterable[List]:
+def chunked(iterable: Iterable, size: int) -> Iterable[List]:
+    """
+    Yield successive chunks of given size from iterable.
+    0 < size <= len(iterable)
+    1,2,3,... -> [1,2], [3,4],
+    1,2,3,... -> [1,2,3], [4,5,6], ...
+    1,2,3,... -> [1], [2], [3], ...
+    :param iterable: input iterable.
+    :param size: chunk size.
+    :return: yields lists of chunked items.
+    """
     chunk = []
     for x in iterable:
         chunk.append(x)
@@ -251,51 +297,56 @@ def _chunked(iterable: Iterable, size: int) -> Iterable[List]:
         yield chunk
 
 
-def _rtid_variants(rt_id: str) -> List[str]:
+def rtid_variants(rt_id: str) -> List[str]:
     """
     Generate a small set of variant RT IDs to handle underscore/dash differences.
     Example: 'm/fast_five' -> ['m/fast_five', 'm/fast-five']
              'm/1010644-intolerance' -> ['m/1010644-intolerance', 'm/1010644_intolerance']
+    :param rt_id: original RT ID string.
+    :return: list of variant RT IDs (including original).
     """
     if not isinstance(rt_id, str):
         return []
-    base = rt_id.rstrip("/")
+    base = rt_id.rstrip(FORWARD_SLASH)
     # Flip underscores <-> dashes only in the slug part (after the first '/')
-    if "/" in base:
-        prefix, slug = base.split("/", 1)
+    if FORWARD_SLASH in base:
+        prefix, slug = base.split(FORWARD_SLASH, 1)
     else:
         prefix, slug = "", base
 
     v = {base}
-    if "_" in slug:
-        v.add(f"{prefix}/{slug.replace('_', '-')}" if prefix else slug.replace("_", "-"))
-    if "-" in slug:
-        v.add(f"{prefix}/{slug.replace('-', '_')}" if prefix else slug.replace("-", "_"))
+    if UNDERSCORE in slug:
+        v.add(f"{prefix}/{slug.replace(UNDERSCORE, HYPHEN)}" if prefix else slug.replace(UNDERSCORE, HYPHEN))
+    if HYPHEN in slug:
+        v.add(f"{prefix}/{slug.replace(HYPHEN, UNDERSCORE)}" if prefix else slug.replace(HYPHEN, UNDERSCORE))
     return list(v)
 
 
-def query_wikidata_for_rt_ids(rt_ids: List[str],
-                              *,
-                              batch_size: int = 150,
+def query_wikidata_for_rt_ids(rt_ids: List[str], *, batch_size: int = 150,
                               user_agent: str = DEFAULT_USER_AGENT) -> pd.DataFrame:
     """
     First pass: query exact RT IDs.
     Second pass: for any misses, try underscore/dash variants.
-    Returns a dataframe with one row per ORIGINAL rt_id (deduped).
+    :param rt_ids: list of Rotten Tomatoes ID strings (may contain duplicates/invalids).
+    :param batch_size: max RT IDs per SPARQL query
+                       (max 200 recommended by WDQS; smaller batches use less memory/time).
+    :param user_agent: User-Agent header value for WDQS requests.
+    :return: DataFrame with one row per original RT ID (if matched).
     """
     # Deduplicate & sanitize
     rt_ids_clean = sorted({rid for rid in rt_ids if isinstance(rid, str) and rid.strip()})
     results: List[pd.DataFrame] = []
 
     # ---- Pass 1: exact IDs ----
-    for chunk in _chunked(rt_ids_clean, batch_size):
+    for chunk in chunked(rt_ids_clean, batch_size):
         pairs = [(rid, rid) for rid in chunk]  # (variant, original)
-        q = _sparql_for_pairs(pairs)
-        js = _post_sparql(q, user_agent=user_agent)
-        results.append(_parse_bindings_to_df(js))
-    df1 = pd.concat(results, ignore_index=True) if results else _parse_bindings_to_df({})
+        q = sparql_for_pairs(pairs)
+        js = post_sparql(q, user_agent=user_agent)
+        results.append(parse_bindings_to_df(js))
 
-    matched = set(df1["rt_id"].dropna()) if not df1.empty else set()
+    df1 = pd.concat(results, ignore_index=True) if results else parse_bindings_to_df({})
+
+    matched = set(df1[ROTTEN_ID_COL].dropna()) if not df1.empty else set()
     missing = [rid for rid in rt_ids_clean if rid not in matched]
 
     if not missing:
@@ -303,47 +354,44 @@ def query_wikidata_for_rt_ids(rt_ids: List[str],
 
     # ---- Pass 2: variants for misses ----
     results2: List[pd.DataFrame] = []
-    for chunk in _chunked(missing, max(1, batch_size // 3)):
+    # Divide batches by approx 1/3 size, since each RT ID may generate multiple variants.
+    for chunk in chunked(missing, max(1, batch_size // 3)):
         pairs: List[Tuple[str, str]] = []
         for rid in chunk:
-            for var in _rtid_variants(rid):
+            for var in rtid_variants(rid):
                 pairs.append((var, rid))
         # If no variants (very rare), skip.
         if not pairs:
             continue
-        q = _sparql_for_pairs(pairs)
-        js = _post_sparql(q, user_agent=user_agent)
-        results2.append(_parse_bindings_to_df(js))
-    df2 = pd.concat(results2, ignore_index=True) if results2 else _parse_bindings_to_df({})
+        q = sparql_for_pairs(pairs)
+        js = post_sparql(q, user_agent=user_agent)
+        results2.append(parse_bindings_to_df(js))
+    df2 = pd.concat(results2, ignore_index=True) if results2 else parse_bindings_to_df({})
 
     if df1.empty:
         return df2
 
     # Combine, preferring exact pass-1 hits
-    combined = pd.concat([df1, df2[~df2["rt_id"].isin(matched)]], ignore_index=True)
-    combined = combined.drop_duplicates(subset=["rt_id"])
+    combined = pd.concat([df1, df2[~df2[ROTTEN_ID_COL].isin(matched)]], ignore_index=True)
+    combined = combined.drop_duplicates(subset=[ROTTEN_ID_COL])
     return combined
 
 
-def attach_wikidata_franchise_ids(df: pd.DataFrame,
-                                  rt_col: str = "rotten_tomatoes_link",
-                                  *,
-                                  id_mode: str = "both",
-                                  batch_size: int = 150,
+def attach_wikidata_franchise_ids(df: pd.DataFrame, rt_col: str = ROTTEN_TOMATOES_ID,
+                                  *, id_mode: str = "both", batch_size: int = 150,
                                   user_agent: str = DEFAULT_USER_AGENT) -> pd.DataFrame:
     """
-    Enrich `df` with:
-      - wd_film_qid, wd_film_label
-      - series_qid, series_label  (P179: "part of the series")
-      - franchise_qid, franchise_label (P8345: "media franchise")
-      - External IDs:
-          * bom_film_id (P1237), imdb_id (P345), tmdb_id (P4947)
-      - Money fields (raw):
-          * budget_value, budget_currency_qid, budget_currency, budget_asof, budget_source
-          * box_office_value, box_office_currency_qid, box_office_currency, box_office_asof,
-            box_office_region_qid, box_office_region
-      - Optional: franchise_id column (choose 'series' or 'ip' via id_mode)
-    id_mode: 'series' | 'ip' | 'both'
+    Enrich a DataFrame with Wikidata franchise/series IDs and other film data by looking up Rotten Tomatoes IDs.
+    :param df: input DataFrame containing a column with Rotten Tomatoes IDs.
+    :param rt_col: name of the column in df containing Rotten Tomatoes IDs (strings).
+    :param id_mode: one of {"series", "ip", "both"}:
+        "series" - add a single "franchise_id" column with the series (P179) QID (if any);
+        "ip" - add a single "franchise_id" column with the franchise (P8345) QID (if any);
+        "both" - add both SERIES_QID_COL and FRANCHISE_QID_COL columns (no single "franchise_id" column).
+    :param batch_size: max RT IDs per SPARQL query
+                       (max 200 recommended by WDQS; smaller batches use less memory/time).
+    :param user_agent: User-Agent header value for WDQS requests.
+    :return: DataFrame with additional columns (may have NaNs if no match found).
     """
     if rt_col not in df.columns:
         raise KeyError(f"Column '{rt_col}' not in DataFrame.")
@@ -353,11 +401,11 @@ def attach_wikidata_franchise_ids(df: pd.DataFrame,
 
     # Left-join back on original rt_id
     out = df.copy()
-    out = out.merge(lookups, how="left", left_on=rt_col, right_on="rt_id")
-    out.drop(columns=["rt_id"], inplace=True)
+    out = out.merge(lookups, how="left", left_on=rt_col, right_on=ROTTEN_ID_COL)
+    out.drop(columns=[ROTTEN_ID_COL], inplace=True)
 
     if id_mode in ("series", "ip"):
-        out["franchise_id"] = out["series_qid"] if id_mode == "series" else out["franchise_qid"]
+        out["franchise_id"] = out[SERIES_QID_COL] if id_mode == "series" else out[FRANCHISE_QID_COL]
     elif id_mode == "both":
         # No single franchise_id; keep both columns.
         pass
@@ -367,21 +415,16 @@ def attach_wikidata_franchise_ids(df: pd.DataFrame,
     return out
 
 
-# ---------------------------
-# Example usage
-# ---------------------------
 if __name__ == "__main__":
     t0 = time.time()
-    data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
-    rt_movies_df = pd.read_csv(os.path.join(data_dir, "rotten_tomatoes_movies.csv"))
     # Do the enrichment (keep both series & franchise IDs)
     enriched = attach_wikidata_franchise_ids(
-        rt_movies_df[["rotten_tomatoes_link"]],
-        "rotten_tomatoes_link",
+        RT_MOVIES_DF[[ROTTEN_TOMATOES_ID]],
+        ROTTEN_TOMATOES_ID,
         id_mode="both"
     )
 
-    enriched.to_csv("./result.csv", index=False)
+    enriched.to_csv(OUT_PATH, index=False)
 
     elapsed = time.time() - t0
-    print(f"Done. Wrote ./result.csv in {elapsed:.2f} seconds.")
+    print(f"Done in {elapsed:.2f} seconds.")
