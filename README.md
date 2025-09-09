@@ -46,9 +46,9 @@ Full paper available [here]()
 - [📁 Project Structure](#-project-structure)
   - [📂 Project Index](#-project-index)
 - [🚀 Getting Started](#-getting-started)
-  - [☑️ Prerequisites](#-prerequisites)
-  - [⚙️ Installation](#-installation)
-  - [🤖 Usage](#🤖-usage)
+  - [☑️ Prerequisites](#%EF%B8%8F-prerequisites)
+  - [⚙️ Installation](#%EF%B8%8F-installation)
+  - [🤖 Usage](#-usage)
 - [🔰 Contributing](#-contributing)
 - [🎗 License](#-license)
 - [🙌 Acknowledgments](#-acknowledgments)
@@ -97,7 +97,7 @@ By combining large-scale datasets with graph analysis, statistical modeling, and
     │   └── streamlit_app.py
     ├── data
     │   ├── collabs.csv
-    │   ├── LICENSE
+    │   ├── LICENSE.md
     │   └── entire_data_link
     ├── figures
     │   ├── corr_pop_rating.png
@@ -290,5 +290,6 @@ Used with permission.
 - [Streamlit](https://streamlit.io/) for powering the interactive web app.  
 
 ---
+
 
 
