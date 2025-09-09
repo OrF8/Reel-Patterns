@@ -1,4 +1,4 @@
-# ========================================================================
+# =======================================================================
 # Reel Patterns: What can I say, We cliqued - visualization app
 #
 # Requirements:
@@ -6,7 +6,7 @@
 #
 # Usage:
 #   python -m streamlit run "What Can I Say, We Cliqued\streamlit_app.py"
-# ========================================================================
+# =======================================================================
 
 import itertools
 import networkx as nx
