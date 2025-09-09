@@ -84,7 +84,7 @@ GN_CAPTION_FMT: str = f"""
 *Note:* When you isolate a single community via the legend, inter-community bridge edges are hidden.
 """
 # Note: The streamlit app is ran from the root directory, so paths are relative to that
-DATA_PATH: str = "data/collabs.csv" if os.name == "posix" else "data\\collabs.csv"
+DATA_PATH: str = os.path.normpath(os.path.join("data", "collabs.csv"))
 DENDROGRAM_TITLE_FMT: str = f"Dendrogram Hierarchy (linkage = {{linkage_method}})"
 BROWSE_COMM_OPTIONS_MULT_FMT: str = f"#{{i}} – {{size}} actors & filmmakers"
 BROWSE_COMM_OPTIONS_SINGLE_FMT: str = f"#{{i}} – 1 actor or filmmaker"
