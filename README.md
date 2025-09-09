@@ -239,6 +239,14 @@ python -m streamlit run "What Can I Say, We Cliqued\streamlit_app.py"
 - **💬 [Join the Discussions](https://github.com/OrF8/Reel-Patterns/discussions)**: Share your insights, provide feedback, or ask questions.
 - **🐛 [Report Issues](https://github.com/OrF8/Reel-Patterns/issues)**: Submit bugs found for the `Reel-Patterns` project.
 
+### ⚠️ Contribution Policy
+This is an **academic course project**, not a community-driven open-source project.  
+We are **not seeking pull requests or code contributions**.  
+However, we welcome:
+- Feedback on our analysis and results  
+- Suggestions for further exploration  
+- Questions or discussions about the methods used
+
 <details closed>
 <summary>Contributor Graph</summary>
 <br>
@@ -290,6 +298,7 @@ Used with permission.
 - [Streamlit](https://streamlit.io/) for powering the interactive web app.  
 
 ---
+
 
 
 
