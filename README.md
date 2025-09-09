@@ -17,10 +17,25 @@ Full paper available [here]()
 > 🎓 Final Grade: _TBD_
 
 <p align="center">
-	<img src="https://img.shields.io/github/license/OrF8/Reel-Patterns?style=default&logo=opensourceinitiative&logoColor=white&color=A40000" alt="license">
+	<img src="https://img.shields.io/github/license/OrF8/Reel-Patterns?style=default&logo=opensourceinitiative&logoColor=white" alt="license">
 	<img src="https://img.shields.io/github/languages/top/OrF8/Reel-Patterns?style=default&color=A40000" alt="repo-top-language">
 </p>
-<p align="center"><!-- default option, no dependency badges. -->
+<p align="center">
+  <!-- Tech stack / deps -->
+  <img src="https://img.shields.io/badge/Streamlit-1.48.1-FF4B4B?logo=streamlit&logoColor=white" alt="streamlit">
+  <img src="https://img.shields.io/badge/Pandas-2.3.2-150458?logo=pandas&logoColor=white" alt="pandas">
+  <img src="https://img.shields.io/badge/NumPy-2.0.2-013243?logo=numpy&logoColor=white" alt="numpy">
+  <img src="https://img.shields.io/badge/Matplotlib-3.9.4-11557C" alt="matplotlib">
+  <img src="https://img.shields.io/badge/Seaborn-0.13.2-4E9CAB" alt="seaborn">
+  <img src="https://img.shields.io/badge/Plotly-6.3.0-3F4F75?logo=plotly&logoColor=white" alt="plotly">
+  <img src="https://img.shields.io/badge/NetworkX-3.2.1-0A66C2" alt="networkx">
+  <br>
+  <img src="https://img.shields.io/badge/SciPy-1.13.1-8CAAE6?logo=scipy&logoColor=white" alt="scipy">
+  <img src="https://img.shields.io/badge/Spotipy-2.25.1-1DB954?logo=spotify&logoColor=white" alt="spotipy">
+  <img src="https://img.shields.io/badge/RapidFuzz-3.13.0-6E40C9" alt="rapidfuzz">
+  <img src="https://img.shields.io/badge/Requests-2.32.5-FF6C37?logo=requests&logoColor=white" alt="requests">
+  <img src="https://img.shields.io/badge/Python--Dotenv-0.9.9-306998?logo=python&logoColor=white" alt="dotenv">
+  <img src="https://img.shields.io/badge/tqdm-4.67.1-FFD43B?logo=tqdm&logoColor=black" alt="tqdm">
 </p>
 <br>
 
@@ -184,7 +199,7 @@ Before getting started with Reel-Patterns, ensure your runtime environment meets
 - Python 3.9
 - pip
 
-Also, make sure to download the available data from [Google Drive](<insert_link>).
+Also, make sure to download the available data from [Google Drive](https://drive.google.com/drive/folders/1NesVB8y9xm-_2s-kShLhZW3PF3YItkGM?usp=sharing).
 
 ### ⚙️ Installation
 
@@ -270,5 +285,11 @@ More information can be found in the [data license](<insert_link>) file.
 
 - Information courtesy of [IMDb](https://www.imdb.com).
 Used with permission.
+- [Rotten Tomatoes dataset on Kaggle](https://www.kaggle.com/datasets/stefanoleone992/rotten-tomatoes-movies-and-critic-reviews-dataset).  
+- [TMDB dataset on Kaggle](https://www.kaggle.com/datasets/asaniczka/tmdb-movies-dataset-2023-930k-movies).  
+- [Wikidata](https://www.wikidata.org/wiki/Wikidata:Licensing) (CC0 public domain data).  
+- [Spotify API](https://developer.spotify.com/) for soundtrack data (queried via [Spotipy](https://spotipy.readthedocs.io/)).  
+- [Streamlit](https://streamlit.io/) for powering the interactive web app.  
 
 ---
+
