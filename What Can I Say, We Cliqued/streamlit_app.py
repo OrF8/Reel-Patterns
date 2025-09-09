@@ -9,7 +9,6 @@
 # =======================================================================
 
 import itertools
-import os
 import networkx as nx
 import numpy as np
 import pandas as pd
@@ -21,7 +20,7 @@ from networkx.algorithms.community.quality import modularity
 from typing import List, Tuple, Dict, Set, Union
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
-from constants import MOVIE_ID_COL, ACTOR_NAME_ID_COL
+from constants import COLLABS_PATH, MOVIE_ID_COL, ACTOR_NAME_ID_COL
 
 ACTOR_NAME_COL: str = "name"
 WEIGHT: str = "weight"
@@ -84,7 +83,7 @@ GN_CAPTION_FMT: str = f"""
 *Note:* When you isolate a single community via the legend, inter-community bridge edges are hidden.
 """
 # Note: The streamlit app is ran from the root directory, so paths are relative to that
-DATA_PATH: str = os.path.normpath(os.path.join("data", "collabs.csv"))
+DATA_PATH: str = COLLABS_PATH
 DENDROGRAM_TITLE_FMT: str = f"Dendrogram Hierarchy (linkage = {{linkage_method}})"
 BROWSE_COMM_OPTIONS_MULT_FMT: str = f"#{{i}} – {{size}} actors & filmmakers"
 BROWSE_COMM_OPTIONS_SINGLE_FMT: str = f"#{{i}} – 1 actor or filmmaker"
@@ -110,9 +109,10 @@ def load_data() -> pd.DataFrame:
     :return: The actor & filmmakers collaboration DataFrame.
     """
     # Load only necessary columns as strings
-    df = pd.read_csv("data/collabs.csv", nrows=0)
-    print("Cloud sees columns:", df.columns.tolist())
-    return df[[MOVIE_ID_COL, ACTOR_NAME_COL, ACTOR_NAME_ID_COL]]
+    # , usecols=[MOVIE_ID_COL, ACTOR_NAME_COL, ACTOR_NAME_ID_COL]
+    df = pd.read_csv(DATA_PATH, dtype=str)
+    print("Cloud sees columns: ", df.columns.tolist())
+    return df
 
 
 @st.cache_data(show_spinner=False)
