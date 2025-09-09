@@ -110,7 +110,7 @@ def load_data() -> pd.DataFrame:
     :return: The actor & filmmakers collaboration DataFrame.
     """
     # Load only necessary columns as strings
-    df = pd.read_csv("collabs.csv", nrows=0)
+    df = pd.read_csv("data/collabs.csv", nrows=0)
     print("Cloud sees columns:", df.columns.tolist())
     return df[[MOVIE_ID_COL, ACTOR_NAME_COL, ACTOR_NAME_ID_COL]]
 
