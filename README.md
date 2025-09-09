@@ -271,13 +271,11 @@ This project combines multiple external datasets. To stay compliant with licensi
 #### ⚠️ Not included (must be fetched by users)
 - **Spotify API data** → Due to [Spotify Developer Terms of Service](https://developer.spotify.com/terms/), we cannot redistribute Spotify-derived datasets (e.g., album or track popularity).  
   Instead, we provide code using [Spotipy](https://spotipy.readthedocs.io/) so you can re-fetch the data yourself with your own API key.
-> Notice: Our script uses heuristics to guess the correct soundtrack album. Because of that, it made some mistakes (about 5%), and we had to manually fix them.
-
----
+	> Notice: Our script uses heuristics to guess the correct soundtrack album. Because of that, it made some mistakes (about 5%), and we had to manually fix them.
 
 **Note:** All datasets were processed (cleaned, merged, filtered) for analysis in this project.  
 Processing does not change their original licensing terms.
-More information can be found in the [data license](<insert_link>) file.
+More information can be found in the [data license](https://github.com/OrF8/Reel-Patterns/blob/main/data/LICENSE.md) file.
 
 ---
 
@@ -292,4 +290,5 @@ Used with permission.
 - [Streamlit](https://streamlit.io/) for powering the interactive web app.  
 
 ---
+
 
