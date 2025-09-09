@@ -111,6 +111,7 @@ def load_data() -> pd.DataFrame:
     """
     # Load only necessary columns as strings
     df: pd.DataFrame = pd.read_csv(DATA_PATH, dtype=str)
+    print(df.head())
     return df[[MOVIE_ID_COL, ACTOR_NAME_COL, ACTOR_NAME_ID_COL]]
 
 
