@@ -8,7 +8,7 @@ Instead of asking _“What makes a movie successful?”_, we dive into unconvent
 
 This project was created by [**Or Forshmit**](https://github.com/OrF8), [**Noam Kimhi**](https://github.com/noam-kimhi) and [**Adir Tuval**](https://github.com/AdirTuval)
 as part of the course [**67978: A Needle in a Data Haystack – Introduction to Data Science**](https://shnaton.huji.ac.il/index.php/NewSyl/67978/2/2025/)
-at the Hebrew University of Jerusalem ([**HUJI**](https://en.huji.ac.il/)).
+at the Hebrew University of Jerusalem ([**HUJI**](https://en.huji.ac.il/)). 
 
 <!---
 Full paper available [here]()
