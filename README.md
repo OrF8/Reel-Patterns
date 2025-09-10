@@ -261,7 +261,9 @@ However, we welcome:
 
 ## 🎗 License
 
-This project is protected under the MIT License. For more details, refer to the [LICENSE](https://github.com/OrF8/Reel-Patterns/blob/main/LICENSE) file.
+This project’s **code and non-dataset material** is licensed under the MIT License.  
+See the [LICENSE](LICENSE) file for details.  
+Datasets are provided under their original licenses (see [data/LICENSE.md](data/LICENSE.md)).
 
 ### 📊 Data Licensing
 
@@ -283,7 +285,7 @@ This project combines multiple external datasets. To stay compliant with licensi
 
 **Note:** All datasets were processed (cleaned, merged, filtered) for analysis in this project.  
 Processing does not change their original licensing terms.
-More information can be found in the [data license](https://github.com/OrF8/Reel-Patterns/blob/main/data/LICENSE.md) file.
+More information can be found in the [data license](data/LICENSE.md) file.
 
 ---
 
@@ -298,6 +300,7 @@ Used with permission.
 - [Streamlit](https://streamlit.io/) for powering the interactive web app.  
 
 ---
+
 
 
 
