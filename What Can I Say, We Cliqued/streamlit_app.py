@@ -71,7 +71,14 @@ BRIDGING_CENTRALITY_METRIC: str = "Bridging centrality"
 PARTICIPATION_METRIC: str ="Participation"
 WARD_LINKAGE: str = "ward"
 SITE_TITLE: str  = "🎬 Reel Patterns: Co‑appearance Communities"
-SITE_CAPTION: str = "Explore which actors and filmmakers tend to appear together, tune thresholds, and compare community algorithms."
+SITE_CAPTION: str = ("Explore which actors and filmmakers tend to appear together, tune thresholds, "
+                     "and compare community algorithms.")
+GRAPH_CAPTION: str = ("_Tip: If labels are cluttered, hide them and use hover tooltips. "
+                      "Increase min. edge weight to focus on stronger ties._")
+LOUVAIN_CAPTION: str = f"""
+    **Smaller resolution** (<1) favors larger, more coarse communities.\n
+    **Larger resolution** (>1) favors smaller, more granular communities.
+"""
 # Explanations for bridge metrics
 METRIC_EXPL: Dict[str, str] = {
             BETWEENNESS_METRIC: "high betweenness centrality — they lie on many shortest paths between different communities",
@@ -752,9 +759,10 @@ with st.spinner("Rendering 3D network…"):
         "modeBarButtonsToRemove": ["lasso3d", "select2d", "lasso2d"],
     })
 
-    st.caption(
-        "Tip: If labels are cluttered, hide them and use hover tooltips. Increase min. edge weight to focus on stronger ties."
-    )
+    st.caption(GRAPH_CAPTION)
+
+    if algo == LOUVAIN_ALGO:
+        st.caption(LOUVAIN_CAPTION)
 
     # Explain what "Bridge nodes/edges" mean (shown only when GN + bridges enabled)
     if algo == GN_ALGO and 'show_bridges' in globals() and show_bridges:
