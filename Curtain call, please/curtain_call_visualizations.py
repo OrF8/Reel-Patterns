@@ -169,6 +169,9 @@ def plot_probability_of_success(data: pd.DataFrame, metric: Metric = ROI,
     :param min_length_of_group: The minimum length of groups to consider
     :param tolerance_for_successful: The tolerance level for defining success.
     :param m: The smoothing parameter for Bayesian shrinkage.
+              We chose five as the default because this value provides moderate smoothing,
+              helping stabilize probability estimates when the sample size at a given index is small,
+              without overwhelming the observed data when more data is available.
     :param alpha: The significance level for confidence intervals.
     :param title: The title of the plot.
     """
