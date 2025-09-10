@@ -121,7 +121,7 @@ By combining large-scale datasets with graph analysis, statistical modeling, and
 
 ### 📂 Project Index
 <details open>
-	<summary><b><code>REEL-PATTERNS</code></b></summary>
+	<summary><b>REEL-PATTERNS</b></summary>
 	<details> <!-- __root__ Submodule -->
 		<summary><b>Root</b></summary>
 		<blockquote>
@@ -314,6 +314,7 @@ Used with permission.
 - [Streamlit](https://streamlit.io/) for powering the interactive web app.  
 
 ---
+
 
 
 
