@@ -76,7 +76,7 @@ def prepare_dataframe_for_probability_of_success_calculation(data: pd.DataFrame,
 
 def calculate_dataframe_for_probability_of_success(df: pd.DataFrame, metric: Metric = ROI,
                                                    tolerance_for_successful: int = 0,
-                                                   m: int = 5, alpha: float = 0.2) -> pd.DataFrame:
+                                                   m: int = 5, alpha: float = 0.15) -> pd.DataFrame:
     """
     Calculate a DataFrame summarizing the probability of success for movies in a franchise
     based on their performance metrics.
@@ -135,7 +135,7 @@ def calculate_dataframe_for_probability_of_success(df: pd.DataFrame, metric: Met
     # Calculate shrunken estimate of probability of success at each index
     agg_df[BAYESIAN_SHRUNKEN_PROB_OF_SUCCESS] = (K_i + m * P_mean) / (N_i + m)
 
-    # Calculate Wilson confidence interval 95% (better for proportions than normal approx)
+    # Calculate Wilson confidence interval 85% (better for proportions than normal approx)
     z = norm.ppf(1 - alpha / 2)
 
     P_i = agg_df[PROB_OF_SUCCESS_NAIVE]
@@ -152,7 +152,7 @@ def calculate_dataframe_for_probability_of_success(df: pd.DataFrame, metric: Met
 def plot_probability_of_success(data: pd.DataFrame, metric: Metric = ROI,
                                 max_length_of_group: int = 6, min_length_of_group: int = 0,
                                 tolerance_for_successful: int = 0, m: int = 5,
-                                alpha: float = 0.2, title: str = TITLE_MAP[ROI]) -> None:
+                                alpha: float = 0.15, title: str = TITLE_MAP[ROI]) -> None:
     """
     Plots the probability of success for a given dataset and metric, with confidence intervals.
     This function visualizes the Bayesian shrunken probability of success for groups within
@@ -188,7 +188,7 @@ def plot_probability_of_success(data: pd.DataFrame, metric: Metric = ROI,
     fig, ax = plt.subplots(figsize=(8, 5))
 
     # Plot CI as shaded region
-    ax.fill_between(X + 1, CI_LO, CI_HI, alpha=0.2, color=CI_COLOR, label="Confidence interval (95%)")
+    ax.fill_between(X + 1, CI_LO, CI_HI, alpha=0.2, color=CI_COLOR, label="Confidence interval (85%)")
 
     # Plot Bayesian shrunken estimate as line with markers
     ax.plot(X + 1, Y_SHRUNK, marker="o", color=MAIN_COLOR, linewidth=2, label="Probability")
