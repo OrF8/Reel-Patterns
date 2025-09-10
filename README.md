@@ -10,9 +10,7 @@ This project was created by [**Or Forshmit**](https://github.com/OrF8), [**Noam 
 as part of the course [**67978: A Needle in a Data Haystack – Introduction to Data Science**](https://shnaton.huji.ac.il/index.php/NewSyl/67978/2/2025/)
 at the Hebrew University of Jerusalem ([**HUJI**](https://en.huji.ac.il/)).
 
-<!---
-Full paper available [here]().
--->
+Full paper available [here](https://github.com/OrF8/Reel-Patterns/blob/main/Reel%20Patterns%20-%20by%20Noam%20Kimhi%2C%20Or%20Forshmit%20and%20Adir%20Tuval.pdf).
 
 > 🎓 Final Grade: _TBD_
 
@@ -314,6 +312,7 @@ Used with permission.
 - [Streamlit](https://streamlit.io/) for powering the interactive web app.  
 
 ---
+
 
 
 
