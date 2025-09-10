@@ -215,19 +215,25 @@ git clone https://github.com/OrF8/Reel-Patterns
 cd Reel-Patterns
 ```
 
-3. Install the project dependencies using `pip`
-   &nbsp; [<img align="center" src="https://img.shields.io/badge/Pip-3776AB.svg?style={badge_style}&logo=pypi&logoColor=white" />](https://pypi.org/project/pip/):
+3. Install the project dependencies using [<img align="center" src="https://img.shields.io/badge/Pip-3776AB.svg?style={badge_style}&logo=pypi&logoColor=white" />](https://pypi.org/project/pip/):
 ```sh
 pip install -r requirements.txt
 ```
 
 ### 🤖 Usage
-Run one of the modules, for example:
+Most modules in this repository are designed to **collect, preprocess, and analyze data**, and then generate plots or visualizations. 
+They are not meant to be long-running services, but rather **scripts that prepare results and figures**.  
+The main exception is the Streamlit app, which allows interactive exploration of results.
+
+You _can_ run one of the modules directly, for example:
 ```sh
 python "Reel Hits Meet Real Hits/reel_hits_viz.py"
 ```
 
-Or run the Streamlit app locally:
+This will collect the relevant data, process it, and produce the associated plots.
+
+To explore the results of the `What can I say? We cliqued` section interactively, you can use the [web app](https://wecliqued.streamlit.app/),
+or you can run the app locally:
 ```sh
 python -m streamlit run "What Can I Say, We Cliqued\streamlit_app.py"
 ```
@@ -237,7 +243,7 @@ python -m streamlit run "What Can I Say, We Cliqued\streamlit_app.py"
 ## 🔰 Contributing
 
 - **💬 [Join the Discussions](https://github.com/OrF8/Reel-Patterns/discussions)**: Share your insights, provide feedback, or ask questions.
-- **🐛 [Report Issues](https://github.com/OrF8/Reel-Patterns/issues)**: Submit bugs found for the `Reel-Patterns` project.
+- **🐛 [Report Issues](https://github.com/OrF8/Reel-Patterns/issues)**: Submit bugs found for the `Reel Patterns` project.
 
 ### ⚠️ Contribution Policy
 This is an **academic course project**, not a community-driven open-source project.  
@@ -300,6 +306,7 @@ Used with permission.
 - [Streamlit](https://streamlit.io/) for powering the interactive web app.  
 
 ---
+
 
 
 
