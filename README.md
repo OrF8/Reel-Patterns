@@ -75,6 +75,14 @@ By combining large-scale datasets with graph analysis, statistical modeling, and
 - Franchise sequel performance analysis  
 - Soundtrack vs. movie success correlations  
 - Interactive visualizations with **Streamlit** in [the web app](https://wecliqued.streamlit.app/)
+  > [![Watch Demo](https://img.shields.io/badge/Watch%20Demo-YouTube-red)](https://youtu.be/7dYvg-mgV4M)
+<p align="center">
+  <a href="https://youtu.be/7dYvg-mgV4M">
+    <img src="https://img.youtube.com/vi/7dYvg-mgV4M/maxres2.jpg"
+         alt="Reel Patterns – Demo" width="800">
+  </a>
+</p>
+
 
 ---
 
@@ -306,6 +314,7 @@ Used with permission.
 - [Streamlit](https://streamlit.io/) for powering the interactive web app.  
 
 ---
+
 
 
 
