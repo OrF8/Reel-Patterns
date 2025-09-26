@@ -20,7 +20,7 @@ Full paper available [here](https://github.com/OrF8/Reel-Patterns/blob/main/Reel
 </p>
 <p align="center">
   <!-- Tech stack / deps -->
-  <img src="https://img.shields.io/badge/Streamlit-1.48.1-FF4B4B?logo=streamlit" alt="streamlit">
+  <img src="https://img.shields.io/badge/Streamlit-1.49.1-FF4B4B?logo=streamlit" alt="streamlit">
   <img src="https://img.shields.io/badge/Pandas-2.3.2-150458?logo=pandas" alt="pandas">
   <img src="https://img.shields.io/badge/NumPy-2.0.2-013243?logo=numpy" alt="numpy">
   <img src="https://img.shields.io/badge/Matplotlib-3.9.4-11557C" alt="matplotlib">
@@ -312,6 +312,7 @@ Used with permission.
 - [Streamlit](https://streamlit.io/) for powering the interactive web app.  
 
 ---
+
 
 
 
