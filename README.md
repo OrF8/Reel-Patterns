@@ -12,7 +12,7 @@ at the Hebrew University of Jerusalem ([**HUJI**](https://en.huji.ac.il/)).
 
 Full paper available [here](https://github.com/OrF8/Reel-Patterns/blob/main/Reel%20Patterns%20-%20by%20Noam%20Kimhi%2C%20Or%20Forshmit%20and%20Adir%20Tuval.pdf).
 
-> 🎓 Final Grade: _TBD_
+> 🎓 Final Grade: **100**
 
 <p align="center">
 	<img src="https://img.shields.io/github/license/OrF8/Reel-Patterns?style=default&logo=opensourceinitiative" alt="license">
@@ -312,6 +312,7 @@ Used with permission.
 - [Streamlit](https://streamlit.io/) for powering the interactive web app.  
 
 ---
+
 
 
 
